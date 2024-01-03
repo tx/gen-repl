@@ -1,4 +1,5 @@
 import std.stdio;
+import std.string;
 import std.net.curl;
 import std.json;
 
