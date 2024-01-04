@@ -1,12 +1,12 @@
 import std.net.curl, std.stdio, std.json, std.process, std.string, std.getopt;
 
-string promptSystemContent()
+string promptProvidedIdentity()
 {
-    writeln("\nEnter the system message:");
+    writeln("\nWho am I?");
     return readln().strip();  // Read user input and remove leading/trailing whitespace
 }
 
-void openaiRequest(string systemMessage, string userMessage, string modelName)
+void openaiRequest(string providedIdentity, string userMessage, string modelName)
 {
     // Retrieve the API key from the environment variable
     string openaiApiKey = std.process.environment["OPENAI_API_KEY"];
@@ -20,7 +20,7 @@ void openaiRequest(string systemMessage, string userMessage, string modelName)
     http.addRequestHeader("Content-Type", "application/json");
     http.addRequestHeader("Authorization", " Bearer " ~ openaiApiKey);
 
-    // Request body in JSON format with system and user messages
+    // Request body in JSON format with providedIdentity and user messages
     string requestBody = format(`
         {
             "model": "%s",
@@ -31,15 +31,11 @@ void openaiRequest(string systemMessage, string userMessage, string modelName)
                 },
                 {
                     "role": "user",
-                    "content": "Please introduce yourself."
-                },
-                {
-                    "role": "user",
                     "content": "%s"
                 }
             ]
         }
-    `, modelName, systemMessage, userMessage);
+    `, modelName, providedIdentity, userMessage);
 
     // Perform the HTTP POST request
     try
@@ -73,9 +69,9 @@ void openaiRequest(string systemMessage, string userMessage, string modelName)
 void printHelp()
 {
     writeln("\nAvailable Commands:");
-    writeln(":exit     - Quit the program");
-    writeln(":help     - Display available commands");
-    writeln(":system   - Change the system message");
+    writeln(":exit         - Quit the program");
+    writeln(":help         - Display available commands");
+    writeln(":providedIdentity - Change the provided identity");
 }
 
 void main(string[] args)
@@ -95,11 +91,11 @@ void main(string[] args)
     writeln("OpenAI Request REPL");
     writeln("-------------------");
 
-    // Prompt the user for the initial system message
-    string systemMessage = promptSystemContent();
+    // Prompt the user for the initial providedIdentity
+    string providedIdentity = promptProvidedIdentity();
 
     // Automatically issue a request with a default userMessage
-    openaiRequest(systemMessage, "Please introduce yourself.", modelName);
+    openaiRequest(providedIdentity, "Please introduce yourself.", modelName);
 
     // Enter the REPL loop for user commands and messages
     while (true)
@@ -117,17 +113,17 @@ void main(string[] args)
         {
             printHelp(); // Display available commands
         }
-        else if (userInput == ":system")
+        else if (userInput == ":providedIdentity")
         {
-            // Prompt the user for a new system message
-            systemMessage = promptSystemContent();
-            writeln("\nSystem message updated successfully.");
+            // Prompt the user for a new providedIdentity
+            providedIdentity = promptProvidedIdentity();
+            writeln("\nProvided identity updated successfully.");
         }
         else
         {
             // Assume other input is a user message
-            // Perform the OpenAI request with the system and user messages
-            openaiRequest(systemMessage, userInput, modelName);
+            // Perform the OpenAI request with the providedIdentity and user message
+            openaiRequest(providedIdentity, userInput, modelName);
         }
     }
     
