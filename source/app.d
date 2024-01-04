@@ -1,4 +1,4 @@
-import std.net.curl, std.stdio, std.json, std.process, std.string;
+import std.net.curl, std.stdio, std.json, std.process, std.string, std.getopt;
 
 string promptSystemContent()
 {
@@ -6,7 +6,7 @@ string promptSystemContent()
     return readln().strip();  // Read user input and remove leading/trailing whitespace
 }
 
-void openaiRequest(string systemMessage, string userMessage)
+void openaiRequest(string systemMessage, string userMessage, string modelName)
 {
     // Retrieve the API key from the environment variable
     string openaiApiKey = std.process.environment["OPENAI_API_KEY"];
@@ -20,10 +20,10 @@ void openaiRequest(string systemMessage, string userMessage)
     http.addRequestHeader("Content-Type", "application/json");
     http.addRequestHeader("Authorization", " Bearer " ~ openaiApiKey);
 
-    // Request body in JSON format with user's message
+    // Request body in JSON format with user's message and specified model
     string requestBody = format(`
         {
-            "model": "gpt-3.5-turbo",
+            "model": "%s",
             "messages": [
                 {
                     "role": "system",
@@ -35,7 +35,7 @@ void openaiRequest(string systemMessage, string userMessage)
                 }
             ]
         }
-    `, systemMessage, userMessage);
+    `, modelName, systemMessage, userMessage);
 
     // Perform the HTTP POST request
     try
@@ -66,8 +66,13 @@ void openaiRequest(string systemMessage, string userMessage)
     }
 }
 
-void main()
+void main(string[] args)
 {
+    // Command line options
+    string modelName = "gpt-3.5-turbo";
+
+    getopt(args, "m|model", &modelName);
+
     // Check if OPENAI_API_KEY is set
     if (std.process.environment.get("OPENAI_API_KEY") is null)
     {
@@ -92,7 +97,7 @@ void main()
         if (userMessage == "exit")
             break;
 
-        // Perform the OpenAI request with the system and user messages
-        openaiRequest(systemMessage, userMessage);
+        // Perform the OpenAI request with the system and user messages and specified model
+        openaiRequest(systemMessage, userMessage, modelName);
     }
 }
