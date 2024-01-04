@@ -70,6 +70,13 @@ void openaiRequest(string systemMessage, string userMessage, string modelName)
     }
 }
 
+void printHelp()
+{
+    writeln("\nAvailable Commands:");
+    writeln(":exit     - Quit the program");
+    writeln(":help     - Display available commands");
+}
+
 void main(string[] args)
 {
     // Command line options
@@ -93,18 +100,32 @@ void main(string[] args)
     // Automatically issue a request with a default userMessage
     openaiRequest(systemMessage, "Please introduce yourself.", modelName);
 
-    // Enter the REPL loop for user messages
+    // Enter the REPL loop for user commands
     while (true)
     {
         // Prompt the user for input
-        writeln("\nEnter your message (or type 'exit' to quit):");
-        string userMessage = readln().strip();  // Read user input and remove leading/trailing whitespace
+        writeln("\nEnter your command (type ':help' for available commands):");
+        string userCommand = readln().strip();  // Read user input and remove leading/trailing whitespace
 
-        // Check if the user wants to exit the REPL
-        if (userMessage == "exit")
-            break;
+        // Process user commands
+        if (userCommand == ":exit")
+        {
+            break; // Exit the REPL loop
+        }
+        else if (userCommand == ":help")
+        {
+            printHelp(); // Display available commands
+        }
+        else
+        {
+            // Assume other input is a user message
+            writeln("\nEnter your message:");
+            string userMessage = readln().strip();  // Read user input and remove leading/trailing whitespace
 
-        // Perform the OpenAI request with the system and user messages
-        openaiRequest(systemMessage, userMessage, modelName);
+            // Perform the OpenAI request with the system and user messages
+            openaiRequest(systemMessage, userMessage, modelName);
+        }
     }
+    
+    writeln("Exiting program. Goodbye!");
 }
