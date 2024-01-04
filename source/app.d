@@ -1,7 +1,4 @@
-import std.stdio;
-import std.string;
-import std.net.curl;
-import std.json;
+import std.net.curl, std.stdio, std.json, std.process, std.string;
 
 string promptSystemContent()
 {
@@ -17,11 +14,11 @@ void openaiRequest(string systemMessage, string userMessage)
     // API endpoint URL
     string apiUrl = "https://api.openai.com/v1/chat/completions";
 
+    auto http = HTTP();
+
     // Request headers
-    string[] headers = [
-        "Content-Type: application/json",
-        "Authorization: Bearer " ~ openaiApiKey
-    ];
+    http.addRequestHeader("Content-Type", "application/json");
+    http.addRequestHeader("Authorization", " Bearer " ~ openaiApiKey);
 
     // Request body in JSON format with user's message
     string requestBody = format(`
@@ -41,21 +38,23 @@ void openaiRequest(string systemMessage, string userMessage)
     `, systemMessage, userMessage);
 
     // Perform the HTTP POST request
-    auto response = curl.post(apiUrl, requestBody, headers);
+    auto response = post(apiUrl, requestBody, http);
 
     // Check if the request was successful (HTTP status code 2xx)
-    if (response.statusCode >= 200 && response.statusCode < 300)
+    if (http.statusLine.code >= 200 && http.statusLine.code < 300)
     {
         // Parse the JSON response
-        Json json = response.bodyReader.jsonObject();
+        auto json = parseJSON(response);
 
         // Access the desired fields from the JSON response
-        writeln("Response:\n", json);
+        foreach (choice; json["choices"].array) {
+          writeln("Response:\n", choice["message"].object["content"].str);
+        }
     }
     else
     {
         // Handle the case where the request was not successful
-        writeln("Error: HTTP ", response.statusCode, "\n", response.bodyReader.readAll());
+        writeln("Error: HTTP ", http.statusLine.code, "\n", response);
     }
 }
 

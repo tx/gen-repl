@@ -1,0 +1,16 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/gpt
+gpt.so
+gpt.dylib
+gpt.dll
+gpt.a
+gpt.lib
+gpt-test-*
+*.exe
+*.pdb
+*.o
+*.obj
+*.lst

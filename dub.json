@@ -1,0 +1,10 @@
+{
+	"authors": [
+		"Morgan Lowtech"
+	],
+	"copyright": "Copyright © 2024, Morgan Lowtech",
+	"description": "GPT generated GPT REPL",
+	"license": "BSD-1-Clause",
+        "name": "gpt",
+        "libs": ["curl"],
+}
