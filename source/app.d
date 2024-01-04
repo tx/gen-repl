@@ -6,7 +6,13 @@ string promptProvidedIdentity()
     return readln().strip();  // Read user input and remove leading/trailing whitespace
 }
 
-void openaiRequest(string providedIdentity, string userMessage, string modelName)
+string promptAssistantContext()
+{
+    writeln("\nEnter assistant context (leave blank if none):");
+    return readln().strip();  // Read user input and remove leading/trailing whitespace
+}
+
+void openaiRequest(string providedIdentity, string userMessage, string modelName, string assistantContext = "")
 {
     // Retrieve the API key from the environment variable
     string openaiApiKey = std.process.environment["OPENAI_API_KEY"];
@@ -20,22 +26,49 @@ void openaiRequest(string providedIdentity, string userMessage, string modelName
     http.addRequestHeader("Content-Type", "application/json");
     http.addRequestHeader("Authorization", " Bearer " ~ openaiApiKey);
 
-    // Request body in JSON format with providedIdentity and user messages
-    string requestBody = format(`
-        {
-            "model": "%s",
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "%s"
-                },
-                {
-                    "role": "user",
-                    "content": "%s"
-                }
-            ]
-        }
-    `, modelName, providedIdentity, userMessage);
+    // Request body in JSON format with providedIdentity, user message, and assistant context if present
+    string requestBody;
+
+    if (assistantContext.length > 0)
+    {
+        requestBody = format(`
+            {
+                "model": "%s",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "%s"
+                    },
+                    {
+                        "role": "user",
+                        "content": "%s"
+                    },
+                    {
+                        "role": "assistant",
+                        "content": "%s"
+                    }
+                ]
+            }
+        `, modelName, providedIdentity, userMessage, assistantContext);
+    }
+    else
+    {
+        requestBody = format(`
+            {
+                "model": "%s",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "%s"
+                    },
+                    {
+                        "role": "user",
+                        "content": "%s"
+                    }
+                ]
+            }
+        `, modelName, providedIdentity, userMessage);
+    }
 
     // Perform the HTTP POST request
     try
@@ -63,6 +96,7 @@ void printHelp()
     writeln(":quit         - Quit the program");
     writeln(":help         - Display available commands");
     writeln(":identity     - Change the provided identity");
+    writeln(":context      - Set assistant context");
 }
 
 void main(string[] args)
@@ -85,8 +119,11 @@ void main(string[] args)
     // Prompt the user for the initial providedIdentity
     string providedIdentity = promptProvidedIdentity();
 
+    // Assistant context
+    string assistantContext;
+
     // Automatically issue a request with a default userMessage
-    openaiRequest(providedIdentity, "Please introduce yourself.", modelName);
+    openaiRequest(providedIdentity, "Please introduce yourself.", modelName, assistantContext);
 
     // Enter the REPL loop for user commands and messages
     while (true)
@@ -114,7 +151,14 @@ void main(string[] args)
                 // Prompt the user for a new providedIdentity
                 providedIdentity = promptProvidedIdentity();
                 // Automatically issue a request with a default userMessage
-                openaiRequest(providedIdentity, "Please introduce yourself.", modelName);
+                openaiRequest(providedIdentity, "Please introduce yourself.", modelName, assistantContext);
+            }
+            else if (command == "context")
+            {
+                // Prompt the user for assistant context
+                writeln("\nEnter the additional context:");
+                assistantContext = readln().strip();
+                writeln("\nAssistant context updated successfully.");
             }
             else
             {
@@ -124,10 +168,11 @@ void main(string[] args)
         else
         {
             // Assume other input is a user message
-            // Perform the OpenAI request with the providedIdentity and user message
-            openaiRequest(providedIdentity, userInput, modelName);
+            // Perform the OpenAI request with the providedIdentity, user message, and assistant context
+            openaiRequest(providedIdentity, userInput, modelName, assistantContext);
         }
     }
     
     writeln("Exiting program. Goodbye!");
 }
+
