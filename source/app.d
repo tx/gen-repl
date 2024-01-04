@@ -105,19 +105,29 @@ void main(string[] args)
         string userInput = readln().strip();  // Read user input and remove leading/trailing whitespace
 
         // Process user commands
-        if (userInput == ":exit")
+        if (userInput.length > 0 && userInput[0] == ':')
         {
-            break; // Exit the REPL loop
-        }
-        else if (userInput == ":help")
-        {
-            printHelp(); // Display available commands
-        }
-        else if (userInput == ":providedIdentity")
-        {
-            // Prompt the user for a new providedIdentity
-            providedIdentity = promptProvidedIdentity();
-            writeln("\nProvided identity updated successfully.");
+            // Commands start with ':'
+            string command = userInput[1..$];  // Exclude the leading ':'
+
+            if (command == "exit")
+            {
+                break; // Exit the REPL loop
+            }
+            else if (command == "help")
+            {
+                printHelp(); // Display available commands
+            }
+            else if (command == "providedIdentity")
+            {
+                // Prompt the user for a new providedIdentity
+                providedIdentity = promptProvidedIdentity();
+                writeln("\nProvided identity updated successfully.");
+            }
+            else
+            {
+                writeln("Error: Unknown command. Type ':help' for available commands.");
+            }
         }
         else
         {
