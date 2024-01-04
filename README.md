@@ -56,6 +56,7 @@ Ensure that you have set the `OPENAI_API_KEY` environment variable with your Ope
 - `:quit`: Exit the program.
 - `:help`: Display available commands.
 - `:identity`: Change the provided identity.
+- `:context`: Set assistant context.
 
 ## Example Usage
 
