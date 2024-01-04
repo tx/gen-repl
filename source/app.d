@@ -20,7 +20,7 @@ void openaiRequest(string systemMessage, string userMessage, string modelName)
     http.addRequestHeader("Content-Type", "application/json");
     http.addRequestHeader("Authorization", " Bearer " ~ openaiApiKey);
 
-    // Request body in JSON format with user's message and specified model
+    // Request body in JSON format with system and user messages
     string requestBody = format(`
         {
             "model": "%s",
@@ -28,6 +28,10 @@ void openaiRequest(string systemMessage, string userMessage, string modelName)
                 {
                     "role": "system",
                     "content": "%s"
+                },
+                {
+                    "role": "user",
+                    "content": "Please introduce yourself."
                 },
                 {
                     "role": "user",
@@ -86,6 +90,9 @@ void main(string[] args)
     // Prompt the user for the system message
     string systemMessage = promptSystemContent();
 
+    // Automatically issue a request with a default userMessage
+    openaiRequest(systemMessage, "Please introduce yourself.", modelName);
+
     // Enter the REPL loop for user messages
     while (true)
     {
@@ -97,7 +104,7 @@ void main(string[] args)
         if (userMessage == "exit")
             break;
 
-        // Perform the OpenAI request with the system and user messages and specified model
+        // Perform the OpenAI request with the system and user messages
         openaiRequest(systemMessage, userMessage, modelName);
     }
 }
