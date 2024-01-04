@@ -69,7 +69,7 @@ void openaiRequest(string systemMessage, string userMessage)
 void main()
 {
     // Check if OPENAI_API_KEY is set
-    if (!std.process.environment.exists("OPENAI_API_KEY"))
+    if (std.process.environment.get("OPENAI_API_KEY") is null)
     {
         writeln("Error: OPENAI_API_KEY environment variable is not set.");
         return;
