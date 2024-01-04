@@ -69,9 +69,9 @@ void openaiRequest(string providedIdentity, string userMessage, string modelName
 void printHelp()
 {
     writeln("\nAvailable Commands:");
-    writeln(":exit         - Quit the program");
+    writeln(":quit         - Quit the program");
     writeln(":help         - Display available commands");
-    writeln(":providedIdentity - Change the provided identity");
+    writeln(":identity     - Change the provided identity");
 }
 
 void main(string[] args)
@@ -110,7 +110,7 @@ void main(string[] args)
             // Commands start with ':'
             string command = userInput[1..$];  // Exclude the leading ':'
 
-            if (command == "exit")
+            if (command == "quit")
             {
                 break; // Exit the REPL loop
             }
@@ -118,11 +118,12 @@ void main(string[] args)
             {
                 printHelp(); // Display available commands
             }
-            else if (command == "providedIdentity")
+            else if (command == "identity")
             {
                 // Prompt the user for a new providedIdentity
                 providedIdentity = promptProvidedIdentity();
-                writeln("\nProvided identity updated successfully.");
+                // Automatically issue a request with a default userMessage
+                openaiRequest(providedIdentity, "Please introduce yourself.", modelName);
             }
             else
             {
