@@ -75,6 +75,7 @@ void printHelp()
     writeln("\nAvailable Commands:");
     writeln(":exit     - Quit the program");
     writeln(":help     - Display available commands");
+    writeln(":system   - Change the system message");
 }
 
 void main(string[] args)
@@ -94,7 +95,7 @@ void main(string[] args)
     writeln("OpenAI Request REPL");
     writeln("-------------------");
 
-    // Prompt the user for the system message
+    // Prompt the user for the initial system message
     string systemMessage = promptSystemContent();
 
     // Automatically issue a request with a default userMessage
@@ -107,7 +108,7 @@ void main(string[] args)
         writeln("\nEnter your command or message (type ':help' for available commands):");
         string userInput = readln().strip();  // Read user input and remove leading/trailing whitespace
 
-        // Check for commands
+        // Process user commands
         if (userInput == ":exit")
         {
             break; // Exit the REPL loop
@@ -115,6 +116,12 @@ void main(string[] args)
         else if (userInput == ":help")
         {
             printHelp(); // Display available commands
+        }
+        else if (userInput == ":system")
+        {
+            // Prompt the user for a new system message
+            systemMessage = promptSystemContent();
+            writeln("\nSystem message updated successfully.");
         }
         else
         {
