@@ -38,28 +38,43 @@ void openaiRequest(string systemMessage, string userMessage)
     `, systemMessage, userMessage);
 
     // Perform the HTTP POST request
-    auto response = post(apiUrl, requestBody, http);
-
-    // Check if the request was successful (HTTP status code 2xx)
-    if (http.statusLine.code >= 200 && http.statusLine.code < 300)
+    try
     {
-        // Parse the JSON response
-        auto json = parseJSON(response);
+        auto response = post(apiUrl, requestBody, http);
 
-        // Access the desired fields from the JSON response
-        foreach (choice; json["choices"].array) {
-          writeln("Response:\n", choice["message"].object["content"].str);
+        // Check if the request was successful (HTTP status code 2xx)
+        if (http.statusLine.code >= 200 && http.statusLine.code < 300)
+        {
+            // Parse the JSON response
+            auto json = parseJSON(response);
+
+            // Access the desired fields from the JSON response
+            foreach (choice; json["choices"].array) {
+                writeln("Response:\n", choice["message"].object["content"].str);
+            }
+        }
+        else
+        {
+            // Handle the case where the request was not successful
+            writeln("Error: HTTP ", http.statusLine.code, "\n", response);
         }
     }
-    else
+    catch (HTTPStatusException e)
     {
-        // Handle the case where the request was not successful
-        writeln("Error: HTTP ", http.statusLine.code, "\n", response);
+        // Handle the exception (e.g., print the status code)
+        writeln("HTTPStatusException: ", e.status);
     }
 }
 
 void main()
 {
+    // Check if OPENAI_API_KEY is set
+    if (!std.process.environment.exists("OPENAI_API_KEY"))
+    {
+        writeln("Error: OPENAI_API_KEY environment variable is not set.");
+        return;
+    }
+
     writeln("OpenAI Request REPL");
     writeln("-------------------");
 
