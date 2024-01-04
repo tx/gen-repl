@@ -100,30 +100,27 @@ void main(string[] args)
     // Automatically issue a request with a default userMessage
     openaiRequest(systemMessage, "Please introduce yourself.", modelName);
 
-    // Enter the REPL loop for user commands
+    // Enter the REPL loop for user commands and messages
     while (true)
     {
         // Prompt the user for input
-        writeln("\nEnter your command (type ':help' for available commands):");
-        string userCommand = readln().strip();  // Read user input and remove leading/trailing whitespace
+        writeln("\nEnter your command or message (type ':help' for available commands):");
+        string userInput = readln().strip();  // Read user input and remove leading/trailing whitespace
 
-        // Process user commands
-        if (userCommand == ":exit")
+        // Check for commands
+        if (userInput == ":exit")
         {
             break; // Exit the REPL loop
         }
-        else if (userCommand == ":help")
+        else if (userInput == ":help")
         {
             printHelp(); // Display available commands
         }
         else
         {
             // Assume other input is a user message
-            writeln("\nEnter your message:");
-            string userMessage = readln().strip();  // Read user input and remove leading/trailing whitespace
-
             // Perform the OpenAI request with the system and user messages
-            openaiRequest(systemMessage, userMessage, modelName);
+            openaiRequest(systemMessage, userInput, modelName);
         }
     }
     
