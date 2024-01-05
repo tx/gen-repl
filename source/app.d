@@ -1,5 +1,16 @@
 import std.net.curl, std.stdio, std.json, std.process, std.string, std.getopt;
 
+// Constants for user prompts
+const string PROMPT_IDENTITY = "\nWho am I?";
+const string PROMPT_CONTEXT = "\nEnter assistant context (leave blank if none):";
+const string PROMPT_COMMAND = "\nEnter your command or message (type ':help' for available commands):";
+
+// Constants for commands
+const string COMMAND_QUIT = ":quit";
+const string COMMAND_HELP = ":help";
+const string COMMAND_IDENTITY = ":identity";
+const string COMMAND_CONTEXT = ":context";
+
 // Define a struct to represent the Chat Completion response
 struct ChatCompletion {
     string id;
@@ -60,13 +71,13 @@ void parseJSONToChatCompletion(JSONValue value, ref ChatCompletion chatCompletio
 
 string promptProvidedIdentity()
 {
-    writeln("\nWho am I?");
+    writeln(PROMPT_IDENTITY);
     return readln().strip();  // Read user input and remove leading/trailing whitespace
 }
 
 string promptAssistantContext()
 {
-    writeln("\nEnter assistant context (leave blank if none):");
+    writeln(PROMPT_CONTEXT);
     return readln().strip();  // Read user input and remove leading/trailing whitespace
 }
 
@@ -146,15 +157,17 @@ void openaiRequest(string providedIdentity, string userMessage, string modelName
     {
         // Handle the case where the request was not successful
         writeln("Error: HTTP ", e.status, "\n", e.msg);
-    }}
+    }
+}
 
 void printHelp()
 {
+    // Hard-coded strings for help command
     writeln("\nAvailable Commands:");
-    writeln(":quit         - Quit the program");
-    writeln(":help         - Display available commands");
-    writeln(":identity     - Change the provided identity");
-    writeln(":context      - Set assistant context");
+    writeln(COMMAND_QUIT, "         - Quit the program");
+    writeln(COMMAND_HELP, "         - Display available commands");
+    writeln(COMMAND_IDENTITY, "     - Change the provided identity");
+    writeln(COMMAND_CONTEXT, "      - Set assistant context");
 }
 
 void main(string[] args)
@@ -187,40 +200,37 @@ void main(string[] args)
     while (true)
     {
         // Prompt the user for input
-        writeln("\nEnter your command or message (type ':help' for available commands):");
+        writeln(PROMPT_COMMAND);
         string userInput = readln().strip();  // Read user input and remove leading/trailing whitespace
 
         // Process user commands
         if (userInput.length > 0 && userInput[0] == ':')
         {
-            // Commands start with ':'
-            string command = userInput[1..$];  // Exclude the leading ':'
-
-            if (command == "quit")
+            if (userInput == COMMAND_QUIT)
             {
                 break; // Exit the REPL loop
             }
-            else if (command == "help")
+            else if (userInput == COMMAND_HELP)
             {
                 printHelp(); // Display available commands
             }
-            else if (command == "identity")
+            else if (userInput == COMMAND_IDENTITY)
             {
                 // Prompt the user for a new providedIdentity
                 providedIdentity = promptProvidedIdentity();
                 // Automatically issue a request with a default userMessage
                 openaiRequest(providedIdentity, "Please introduce yourself.", modelName, assistantContext);
             }
-            else if (command == "context")
+            else if (userInput == COMMAND_CONTEXT)
             {
                 // Prompt the user for assistant context
-                writeln("\nEnter the additional context:");
+                writeln(PROMPT_CONTEXT);
                 assistantContext = readln().strip();
                 writeln("\nAssistant context updated successfully.");
             }
             else
             {
-                writeln("Error: Unknown command. Type ':help' for available commands.");
+                writeln("Error: Unknown command. Type '", COMMAND_HELP, "' for available commands.");
             }
         }
         else
@@ -230,7 +240,6 @@ void main(string[] args)
             openaiRequest(providedIdentity, userInput, modelName, assistantContext);
         }
     }
-    
+
     writeln("Exiting program. Goodbye!");
 }
-
