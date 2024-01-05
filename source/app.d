@@ -107,10 +107,11 @@ void openaiRequest(string providedIdentity, string userMessage, string modelName
         auto escapedIdentity = providedIdentity.toJSONString();
         auto escapedUserMessage = userMessage.toJSONString();
         auto escapedAssistantContext = assistantContext.toJSONString();
+        auto escapedModelName = modelName.toJSONString();
 
         requestBody = format(`
             {
-                "model": "%s",
+                "model": %s,
                 "messages": [
                     {
                         "role": "system",
@@ -126,16 +127,17 @@ void openaiRequest(string providedIdentity, string userMessage, string modelName
                     }
                 ]
             }
-        `, modelName, escapedIdentity, escapedUserMessage, escapedAssistantContext);
+        `, escapedModelName, escapedIdentity, escapedUserMessage, escapedAssistantContext);
     }
     else
     {
         auto escapedIdentity = providedIdentity.toJSONString();
         auto escapedUserMessage = userMessage.toJSONString();
+        auto escapedModelName = modelName.toJSONString();
 
         requestBody = format(`
             {
-                "model": "%s",
+                "model": %s,
                 "messages": [
                     {
                         "role": "system",
@@ -147,7 +149,7 @@ void openaiRequest(string providedIdentity, string userMessage, string modelName
                     }
                 ]
             }
-        `, modelName, escapedIdentity, escapedUserMessage);
+        `, escapedModelName, escapedIdentity, escapedUserMessage);
     }
 
     // Perform the HTTP POST request
