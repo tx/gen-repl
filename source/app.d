@@ -80,6 +80,10 @@ string promptAssistantContext()
     writeln(PROMPT_CONTEXT);
     return readln().strip();  // Read user input and remove leading/trailing whitespace
 }
+string toJSONString(string s)
+{
+  return '"' ~ s.replace('"',"\\\"") ~ '"';
+}
 
 void openaiRequest(string providedIdentity, string userMessage, string modelName, string assistantContext = "")
 {
@@ -100,43 +104,50 @@ void openaiRequest(string providedIdentity, string userMessage, string modelName
 
     if (assistantContext.length > 0)
     {
+        auto escapedIdentity = providedIdentity.toJSONString();
+        auto escapedUserMessage = userMessage.toJSONString();
+        auto escapedAssistantContext = assistantContext.toJSONString();
+
         requestBody = format(`
             {
                 "model": "%s",
                 "messages": [
                     {
                         "role": "system",
-                        "content": "%s"
+                        "content": %s
                     },
                     {
                         "role": "user",
-                        "content": "%s"
+                        "content": %s
                     },
                     {
                         "role": "assistant",
-                        "content": "%s"
+                        "content": %s
                     }
                 ]
             }
-        `, modelName, providedIdentity, userMessage, assistantContext);
+        `, modelName, escapedIdentity, escapedUserMessage, escapedAssistantContext);
     }
     else
     {
+        auto escapedIdentity = providedIdentity.toJSONString();
+        auto escapedUserMessage = userMessage.toJSONString();
+
         requestBody = format(`
             {
                 "model": "%s",
                 "messages": [
                     {
                         "role": "system",
-                        "content": "%s"
+                        "content": %s
                     },
                     {
                         "role": "user",
-                        "content": "%s"
+                        "content": %s
                     }
                 ]
             }
-        `, modelName, providedIdentity, userMessage);
+        `, modelName, escapedIdentity, escapedUserMessage);
     }
 
     // Perform the HTTP POST request
