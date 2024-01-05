@@ -1,5 +1,63 @@
 import std.net.curl, std.stdio, std.json, std.process, std.string, std.getopt;
 
+// Define a struct to represent the Chat Completion response
+struct ChatCompletion {
+    string id;
+    string object;
+    int created;
+    string model;
+    Choice[] choices;
+    Usage usage;
+}
+
+// Define structs for nested objects
+struct Choice {
+    int index;
+    Message message;
+    string finish_reason;
+}
+
+struct Message {
+    string role;
+    string content;
+}
+
+struct Usage {
+    int prompt_tokens;
+    int completion_tokens;
+    int total_tokens;
+}
+
+// Function to manually parse JSON and populate the struct
+void parseJSONToChatCompletion(JSONValue value, ref ChatCompletion chatCompletion) {
+    chatCompletion.id = value["id"].get!string;
+    chatCompletion.object = value["object"].get!string;
+    chatCompletion.created = value["created"].get!int;
+    chatCompletion.model = value["model"].get!string;
+
+    // Parse choices array
+    foreach (elem; value["choices"].array) {
+        Choice choice;
+        choice.index = elem["index"].get!int;
+        choice.finish_reason = elem["finish_reason"].get!string;
+
+        // Parse message object
+        Message message;
+        message.role = elem["message"]["role"].get!string;
+        message.content = elem["message"]["content"].get!string;
+        choice.message = message;
+
+        chatCompletion.choices ~= choice;
+    }
+
+    // Parse usage object
+    Usage usage;
+    usage.prompt_tokens = value["usage"]["prompt_tokens"].get!int;
+    usage.completion_tokens = value["usage"]["completion_tokens"].get!int;
+    usage.total_tokens = value["usage"]["total_tokens"].get!int;
+    chatCompletion.usage = usage;
+}
+
 string promptProvidedIdentity()
 {
     writeln("\nWho am I?");
@@ -74,21 +132,21 @@ void openaiRequest(string providedIdentity, string userMessage, string modelName
     try
     {
         auto response = post(apiUrl, requestBody, http);
+        auto jsonValue = parseJSON(response);
+        // Parse the JSON response into ChatCompletion struct
+        ChatCompletion chatCompletion;
+        parseJSONToChatCompletion(jsonValue, chatCompletion);
 
-        // Parse the JSON response
-        auto json = parseJSON(response);
-
-        // Access the desired fields from the JSON response
-        foreach (choice; json["choices"].array) {
-            writeln("Response:\n", choice["message"].object["content"].str);
+        // Access the desired fields from the struct
+        foreach (choice; chatCompletion.choices) {
+            writeln("Response:\n", choice.message.content);
         }
     }
     catch (HTTPStatusException e)
     {
         // Handle the case where the request was not successful
         writeln("Error: HTTP ", e.status, "\n", e.msg);
-    }
-}
+    }}
 
 void printHelp()
 {
