@@ -69,17 +69,13 @@ void parseJSONToChatCompletion(JSONValue value, ref ChatCompletion chatCompletio
     chatCompletion.usage = usage;
 }
 
-string promptProvidedIdentity()
+// Function to prompt the user for input
+string promptUser(const string prompt)
 {
-    writeln(PROMPT_IDENTITY);
+    writeln(prompt);
     return readln().strip();  // Read user input and remove leading/trailing whitespace
 }
 
-string promptAssistantContext()
-{
-    writeln(PROMPT_CONTEXT);
-    return readln().strip();  // Read user input and remove leading/trailing whitespace
-}
 string toJSONString(string s)
 {
   return '"' ~ s.replace('"',"\\\"") ~ '"';
@@ -201,7 +197,7 @@ void main(string[] args)
     writeln("-------------------");
 
     // Prompt the user for the initial providedIdentity
-    string providedIdentity = promptProvidedIdentity();
+    string providedIdentity = promptUser(PROMPT_IDENTITY);
 
     // Assistant context
     string assistantContext;
@@ -213,8 +209,7 @@ void main(string[] args)
     while (true)
     {
         // Prompt the user for input
-        writeln(PROMPT_COMMAND);
-        string userInput = readln().strip();  // Read user input and remove leading/trailing whitespace
+        string userInput = promptUser(PROMPT_COMMAND);
 
         // Process user commands
         if (userInput.length > 0 && userInput[0] == ':')
@@ -230,15 +225,14 @@ void main(string[] args)
             else if (userInput == COMMAND_IDENTITY)
             {
                 // Prompt the user for a new providedIdentity
-                providedIdentity = promptProvidedIdentity();
+                providedIdentity = promptUser(PROMPT_IDENTITY);
                 // Automatically issue a request with a default userMessage
                 openaiRequest(providedIdentity, "Please introduce yourself.", modelName, assistantContext);
             }
             else if (userInput == COMMAND_CONTEXT)
             {
                 // Prompt the user for assistant context
-                writeln(PROMPT_CONTEXT);
-                assistantContext = readln().strip();
+                assistantContext = promptUser(PROMPT_CONTEXT);
                 writeln("\nAssistant context updated successfully.");
             }
             else
