@@ -76,7 +76,7 @@ string promptUser(const string prompt)
     return readln().strip();  // Read user input and remove leading/trailing whitespace
 }
 
-string[] openaiRequest(string providedIdentity, string userMessage, string modelName, string assistantContext = "")
+ChatCompletion openaiRequest(string providedIdentity, string userMessage, string modelName, string assistantContext = "")
 {
     // Retrieve the API key from the environment variable
     string openaiApiKey = std.process.environment["OPENAI_API_KEY"];
@@ -107,9 +107,6 @@ string[] openaiRequest(string providedIdentity, string userMessage, string model
     // Convert the JSONValue to a string
     string requestBody = requestBodyData.toJSON();
 
-    // Initialize an array to store message contents
-    string[] messageContents;
-
     // Perform the HTTP POST request
     try
     {
@@ -119,11 +116,8 @@ string[] openaiRequest(string providedIdentity, string userMessage, string model
         ChatCompletion chatCompletion;
         parseJSONToChatCompletion(jsonValue, chatCompletion);
 
-        // Access the desired fields from the struct and store in the array
-        foreach (choice; chatCompletion.choices)
-        {
-            messageContents ~= "Response:\n" ~ choice.message.content;
-        }
+        // Return the ChatCompletion object directly
+        return chatCompletion;
     }
     catch (HTTPStatusException e)
     {
@@ -131,8 +125,8 @@ string[] openaiRequest(string providedIdentity, string userMessage, string model
         writeln("Error: HTTP ", e.status, "\n", e.msg);
     }
 
-    // Return the array of message contents
-    return messageContents;
+    // Return an empty ChatCompletion object in case of an error
+    return ChatCompletion.init;
 }
 
 
@@ -211,12 +205,12 @@ void main(string[] args)
         {
             // Assume other input is a user message
             // Perform the OpenAI request with the providedIdentity, user message, and assistant context
-            string[] messageContents = openaiRequest(providedIdentity, userInput, modelName, assistantContext);
+            ChatCompletion chatCompletion = openaiRequest(providedIdentity, userInput, modelName, assistantContext);
 
-            // Write the messages to the terminal
-            foreach (message; messageContents)
+            // Access the desired fields from the struct and write to the terminal
+            foreach (choice; chatCompletion.choices)
             {
-                writeln(message);
+                writeln("Response:\n", choice.message.content);
             }
         }
     }
