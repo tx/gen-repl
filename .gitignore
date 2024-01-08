@@ -9,6 +9,7 @@ gen-repl.dll
 gen-repl.a
 gen-repl.lib
 gen-repl-test-*
+libgen-repl.a
 *.exe
 *.pdb
 *.o
