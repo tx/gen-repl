@@ -11,8 +11,8 @@ const string COMMAND_HELP = ":help";
 const string COMMAND_IDENTITY = ":identity";
 const string COMMAND_CONTEXT = ":context";
 
-// Define a struct to represent the Chat Completion response
-struct ChatCompletion {
+// Define a struct to represent the Chat Response
+struct ChatResponse {
     string id;
     string object;
     int created;
@@ -40,11 +40,12 @@ struct Usage {
 }
 
 // Function to manually parse JSON and populate the struct
-void parseJSONToChatCompletion(JSONValue value, ref ChatCompletion chatCompletion) {
-    chatCompletion.id = value["id"].get!string;
-    chatCompletion.object = value["object"].get!string;
-    chatCompletion.created = value["created"].get!int;
-    chatCompletion.model = value["model"].get!string;
+ChatResponse toChatResponse(JSONValue value) {
+    ChatResponse chatResponse;
+    chatResponse.id = value["id"].get!string;
+    chatResponse.object = value["object"].get!string;
+    chatResponse.created = value["created"].get!int;
+    chatResponse.model = value["model"].get!string;
 
     // Parse choices array
     foreach (elem; value["choices"].array) {
@@ -58,7 +59,7 @@ void parseJSONToChatCompletion(JSONValue value, ref ChatCompletion chatCompletio
         message.content = elem["message"]["content"].get!string;
         choice.message = message;
 
-        chatCompletion.choices ~= choice;
+        chatResponse.choices ~= choice;
     }
 
     // Parse usage object
@@ -66,7 +67,8 @@ void parseJSONToChatCompletion(JSONValue value, ref ChatCompletion chatCompletio
     usage.prompt_tokens = value["usage"]["prompt_tokens"].get!int;
     usage.completion_tokens = value["usage"]["completion_tokens"].get!int;
     usage.total_tokens = value["usage"]["total_tokens"].get!int;
-    chatCompletion.usage = usage;
+    chatResponse.usage = usage;
+    return chatResponse;
 }
 
 // Function to prompt the user for input
@@ -76,7 +78,7 @@ string promptUser(const string prompt)
     return readln().strip();  // Read user input and remove leading/trailing whitespace
 }
 
-ChatCompletion openaiRequest(string providedIdentity, string userMessage, string modelName, string assistantContext = "")
+ChatResponse chatRequest(string providedIdentity, string userMessage, string modelName, string assistantContext = "")
 {
     // Retrieve the API key from the environment variable
     string openaiApiKey = std.process.environment["OPENAI_API_KEY"];
@@ -112,12 +114,11 @@ ChatCompletion openaiRequest(string providedIdentity, string userMessage, string
     {
         auto response = post(apiUrl, requestBody, http);
         auto jsonValue = parseJSON(response);
-        // Parse the JSON response into ChatCompletion struct
-        ChatCompletion chatCompletion;
-        parseJSONToChatCompletion(jsonValue, chatCompletion);
+        // Parse the JSON response into ChatResponse struct
+        ChatResponse chatResponse = jsonValue.toChatResponse();
 
-        // Return the ChatCompletion object directly
-        return chatCompletion;
+        // Return the ChatResponse object directly
+        return chatResponse;
     }
     catch (HTTPStatusException e)
     {
@@ -125,8 +126,8 @@ ChatCompletion openaiRequest(string providedIdentity, string userMessage, string
         writeln("Error: HTTP ", e.status, "\n", e.msg);
     }
 
-    // Return an empty ChatCompletion object in case of an error
-    return ChatCompletion.init;
+    // Return an empty ChatResponse object in case of an error
+    return ChatResponse.init;
 }
 
 
@@ -164,7 +165,7 @@ void main(string[] args)
     string assistantContext;
 
     // Automatically issue a request with a default userMessage
-    openaiRequest(providedIdentity, "Please introduce yourself.", modelName, assistantContext);
+    chatRequest(providedIdentity, "Please introduce yourself.", modelName, assistantContext);
 
     // Enter the REPL loop for user commands and messages
     while (true)
@@ -188,7 +189,7 @@ void main(string[] args)
                 // Prompt the user for a new providedIdentity
                 providedIdentity = promptUser(PROMPT_IDENTITY);
                 // Automatically issue a request with a default userMessage
-                openaiRequest(providedIdentity, "Please introduce yourself.", modelName, assistantContext);
+                chatRequest(providedIdentity, "Please introduce yourself.", modelName, assistantContext);
             }
             else if (userInput == COMMAND_CONTEXT)
             {
@@ -205,10 +206,10 @@ void main(string[] args)
         {
             // Assume other input is a user message
             // Perform the OpenAI request with the providedIdentity, user message, and assistant context
-            ChatCompletion chatCompletion = openaiRequest(providedIdentity, userInput, modelName, assistantContext);
+            ChatResponse chatResponse = chatRequest(providedIdentity, userInput, modelName, assistantContext);
 
             // Access the desired fields from the struct and write to the terminal
-            foreach (choice; chatCompletion.choices)
+            foreach (choice; chatResponse.choices)
             {
                 writeln("Response:\n", choice.message.content);
             }
