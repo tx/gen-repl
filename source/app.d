@@ -76,11 +76,6 @@ string promptUser(const string prompt)
     return readln().strip();  // Read user input and remove leading/trailing whitespace
 }
 
-string toJSONString(string s)
-{
-  return '"' ~ s.replace('"',"\\\"") ~ '"';
-}
-
 void openaiRequest(string providedIdentity, string userMessage, string modelName, string assistantContext = "")
 {
     // Retrieve the API key from the environment variable
@@ -95,58 +90,22 @@ void openaiRequest(string providedIdentity, string userMessage, string modelName
     http.addRequestHeader("Content-Type", "application/json");
     http.addRequestHeader("Authorization", " Bearer " ~ openaiApiKey);
 
-    // Request body in JSON format with providedIdentity, user message, and assistant context if present
-    string requestBody;
+    // Convert the D associative array to a JSONValue
+    auto requestBodyData = JSONValue(["model": modelName]);
 
-    if (assistantContext.length > 0)
+    // Add Messages
+    auto messages = [["role": "system", "content": providedIdentity],
+                     ["role": "user", "content": userMessage]];
+    requestBodyData["messages"] = JSONValue(messages);
+
+    // Add assistant context if present
+    if (!assistantContext.empty())
     {
-        auto escapedIdentity = providedIdentity.toJSONString();
-        auto escapedUserMessage = userMessage.toJSONString();
-        auto escapedAssistantContext = assistantContext.toJSONString();
-        auto escapedModelName = modelName.toJSONString();
-
-        requestBody = format(`
-            {
-                "model": %s,
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": %s
-                    },
-                    {
-                        "role": "user",
-                        "content": %s
-                    },
-                    {
-                        "role": "assistant",
-                        "content": %s
-                    }
-                ]
-            }
-        `, escapedModelName, escapedIdentity, escapedUserMessage, escapedAssistantContext);
+      requestBodyData["messages"] ~= JSONValue(["role": "assistant", "content": assistantContext]);
     }
-    else
-    {
-        auto escapedIdentity = providedIdentity.toJSONString();
-        auto escapedUserMessage = userMessage.toJSONString();
-        auto escapedModelName = modelName.toJSONString();
 
-        requestBody = format(`
-            {
-                "model": %s,
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": %s
-                    },
-                    {
-                        "role": "user",
-                        "content": %s
-                    }
-                ]
-            }
-        `, escapedModelName, escapedIdentity, escapedUserMessage);
-    }
+    // Convert the JSONValue to a string
+    string requestBody = requestBodyData.toJSON();
 
     // Perform the HTTP POST request
     try
