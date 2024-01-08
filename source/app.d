@@ -76,7 +76,7 @@ string promptUser(const string prompt)
     return readln().strip();  // Read user input and remove leading/trailing whitespace
 }
 
-void openaiRequest(string providedIdentity, string userMessage, string modelName, string assistantContext = "")
+string[] openaiRequest(string providedIdentity, string userMessage, string modelName, string assistantContext = "")
 {
     // Retrieve the API key from the environment variable
     string openaiApiKey = std.process.environment["OPENAI_API_KEY"];
@@ -101,11 +101,14 @@ void openaiRequest(string providedIdentity, string userMessage, string modelName
     // Add assistant context if present
     if (!assistantContext.empty())
     {
-      requestBodyData["messages"] ~= JSONValue(["role": "assistant", "content": assistantContext]);
+        requestBodyData["messages"] ~= JSONValue(["role": "assistant", "content": assistantContext]);
     }
 
     // Convert the JSONValue to a string
     string requestBody = requestBodyData.toJSON();
+
+    // Initialize an array to store message contents
+    string[] messageContents;
 
     // Perform the HTTP POST request
     try
@@ -116,9 +119,10 @@ void openaiRequest(string providedIdentity, string userMessage, string modelName
         ChatCompletion chatCompletion;
         parseJSONToChatCompletion(jsonValue, chatCompletion);
 
-        // Access the desired fields from the struct
-        foreach (choice; chatCompletion.choices) {
-            writeln("Response:\n", choice.message.content);
+        // Access the desired fields from the struct and store in the array
+        foreach (choice; chatCompletion.choices)
+        {
+            messageContents ~= "Response:\n" ~ choice.message.content;
         }
     }
     catch (HTTPStatusException e)
@@ -126,7 +130,11 @@ void openaiRequest(string providedIdentity, string userMessage, string modelName
         // Handle the case where the request was not successful
         writeln("Error: HTTP ", e.status, "\n", e.msg);
     }
+
+    // Return the array of message contents
+    return messageContents;
 }
+
 
 void printHelp()
 {
@@ -203,7 +211,13 @@ void main(string[] args)
         {
             // Assume other input is a user message
             // Perform the OpenAI request with the providedIdentity, user message, and assistant context
-            openaiRequest(providedIdentity, userInput, modelName, assistantContext);
+            string[] messageContents = openaiRequest(providedIdentity, userInput, modelName, assistantContext);
+
+            // Write the messages to the terminal
+            foreach (message; messageContents)
+            {
+                writeln(message);
+            }
         }
     }
 
