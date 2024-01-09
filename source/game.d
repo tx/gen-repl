@@ -1,8 +1,10 @@
 module gen_repl.game;
 
 import std.algorithm;
+import std.range;
 import std.stdio;
 import std.string;
+import std.random;
 import std.getopt;
 import std.json; // Import the JSON module
 
@@ -51,45 +53,42 @@ struct WorldState {
 Location[] gameWorld;
 WorldState worldState;
 UserState userState;
-Creature enemyCreature;
-string gameMap = `[
+auto rnd = Random(42);
+
+// JSON strings for Items, Creatures, and Locations
+string itemsJSON = `[
+    {"name": "Magic Wand", "description": "A powerful wand."},
+    {"name": "Health Potion", "description": "Restores health."},
+    {"name": "Map", "description": "A detailed map of the area."}
+]`;
+
+string creaturesJSON = `[
+    {
+        "name": "Dragon",
+        "health": 150,
+        "defense": 15,
+        "attack": 25,
+        "inventory": [{"name": "Fire Breath", "description": "A powerful fire attack."}]
+    }
+]`;
+
+string locationsJSON = `[
     {
         "name": "Forest",
         "description": "A dense forest with tall trees.",
-        "exits": ["Cave", "River"],
-        "items": [
-            {"name": "Magic Wand", "description": "A powerful wand.", "locationIndex": 0}
-        ],
-        "creatures": [
-            {
-                "name": "Dragon",
-                "health": 150,
-                "defense": 15,
-                "attack": 25,
-                "inventory": [{"name": "Fire Breath", "description": "A powerful fire attack.", "locationIndex": 0}]
-            }
-        ]
+        "exits": ["Cave", "River"]
     },
     {
         "name": "Cave",
         "description": "A dark cave with mysterious echoes.",
-        "exits": ["Forest"],
-        "items": [
-            {"name": "Health Potion", "description": "Restores health.", "locationIndex": 1}
-        ],
-        "creatures": []
+        "exits": ["Forest"]
     },
     {
         "name": "River",
         "description": "A gentle river flowing through the landscape.",
-        "exits": ["Forest"],
-        "items": [
-            {"name": "Map", "description": "A detailed map of the area.", "locationIndex": 2}
-        ],
-        "creatures": []
+        "exits": ["Forest"]
     }
-]
-`;
+]`;
 
 // Dummy function to parse items from JSON
 Item[] toItems(JSONValue itemsJSON)
@@ -102,7 +101,6 @@ Item[] toItems(JSONValue itemsJSON)
 
         item.name = itemObj["name"].str;
         item.description = itemObj["description"].str;
-        item.locationIndex = itemObj["locationIndex"].get!int;
 
         items ~= item;
     }
@@ -135,7 +133,8 @@ Creature[] toCreatures(JSONValue creaturesJSON)
     return creatures;
 }
 
-Location[] populateGameWorld(JSONValue locationsJSON)
+// Dummy function to parse locations from JSON
+Location[] toLocations(JSONValue locationsJSON)
 {
     Location[] world = [];
     if (locationsJSON.type != JSONType.array)
@@ -154,19 +153,48 @@ Location[] populateGameWorld(JSONValue locationsJSON)
           location.exits ~= exit.get!string;
         }
 
-        // Populate items
-        auto itemsJSON = locationObj["items"];
-        if (itemsJSON.type == JSONType.array)
-           location.items = itemsJSON.toItems();
-
-        // Populate creatures
-        auto creaturesJSON = locationObj["creatures"];
-        if (creaturesJSON.type == JSONType.array)
-           location.creatures = creaturesJSON.toCreatures();
-
         world ~= location;
     }
     return world;
+}
+
+// Function to randomly populate items and/or creatures in locations
+void randomPopulateLocations(Location[] locations, Item[] items, Creature[] creatures)
+{
+    // Tracks the items and creatures that have been added
+    Item[] addedItems;
+    Creature[] addedCreatures;
+    while ( addedItems.length < items.length || addedCreatures.length < creatures.length )
+      {
+        foreach (ref location; locations)
+          {
+            // Randomly add items
+            if (uniform(0, 100, rnd) % 2 == 0)
+              {
+                // Add a random item from the items array if not already added
+                Item[] remainingItems = items.filter!(item => !addedItems.canFind(item)).array();
+                if(!remainingItems.empty())
+                  {
+                    auto randomItem = remainingItems.choice(rnd);
+                    addedItems ~= randomItem;
+                    location.items ~= randomItem;
+                  }
+              }
+            
+            // Randomly add creatures
+            if (uniform(0, 100, rnd) % 2 == 0)
+              {
+                // Add a random creature from the creatures array if not already added
+                Creature[] remainingCreatures = creatures.filter!(creature => !addedCreatures.canFind(creature)).array();
+                if(!remainingCreatures.empty())
+                  {
+                    auto randomCreature = remainingCreatures.choice(rnd);
+                    addedCreatures ~= randomCreature;
+                    location.creatures ~= randomCreature;
+                  }
+              }
+          }
+      }
 }
 
 // Add functions to handle items
@@ -193,12 +221,11 @@ void displayInventory()
     }
 }
 
-void displayCreatureInventory()
+void displayCreatures()
 {
-    writeln("The creature carries the following items:");
-    foreach (item; enemyCreature.inventory)
+    foreach (enemyCreature; gameWorld[userState.locationIndex].creatures)
     {
-        writeln("\t", item.name, " - ", item.description);
+        writeln("\tYou see a ", enemyCreature.name, "!");
     }
 }
 
@@ -209,7 +236,7 @@ void displayStatus()
   // Display player's inventory
   displayInventory();
   // Display creature's inventory
-  displayCreatureInventory();
+  displayCreatures();
 }
 
 bool pickUpItem(string itemName)
@@ -233,7 +260,7 @@ bool pickUpItem(string itemName)
 // Dummy function to start the text adventure game
 bool startTextAdventureGame()
 {
-    gameWorld = parseJSON(gameMap).populateGameWorld();
+    gameWorld = toLocations(parseJSON(locationsJSON));
     worldState = WorldState(false, "");
     userState = UserState(0, 100, 10, 20, []); // Initial health, defense, attack values
 
@@ -241,6 +268,14 @@ bool startTextAdventureGame()
     worldState.playerName = readln().strip();
     worldState.isGameOver = false;
     userState.locationIndex = 0;
+
+    // Parse items and creatures from JSON
+    Item[] items = toItems(parseJSON(itemsJSON));
+    Creature[] creatures = toCreatures(parseJSON(creaturesJSON));
+
+    // Randomly populate items and creatures in locations
+    randomPopulateLocations(gameWorld, items, creatures);
+
     writeln("Hello, ", worldState.playerName, "! Let the adventure begin!");
     return true;
 }
