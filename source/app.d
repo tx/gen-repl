@@ -9,9 +9,9 @@ import gen_repl.chat;  // Import the chat module
 import gen_repl.game;  // Import the game module
 
 // Constants for user prompts
-const string PROMPT_IDENTITY = "\nWho am I?";
-const string PROMPT_CONTEXT = "\nEnter assistant context (leave blank if none):";
-const string PROMPT_COMMAND = "\nEnter your command or message (type ':help' for available commands):";
+const string PROMPT_IDENTITY = "\nWho am I?\n> ";
+const string PROMPT_CONTEXT = "\nEnter assistant context (leave blank if none)>\n";
+const string PROMPT_COMMAND = "\n> ";
 
 // Constants for commands
 const string COMMAND_QUIT = ":quit";
@@ -23,7 +23,7 @@ const string COMMAND_GAME = ":game";
 // Function to prompt the user for input
 string promptUser(const string prompt)
 {
-    writeln(prompt);
+    write(prompt);
     return readln().strip();  // Read user input and remove leading/trailing whitespace
 }
 
@@ -100,7 +100,7 @@ void main(string[] args)
                 while (inProgress)
                   {
                     displayLocation();
-                    string gameInput = promptUser("Enter your command:");
+                    string gameInput = promptUser("> ");
                     inProgress = handleGameInput(gameInput);
                   }
                 // Display game outcome and return to the main REPL loop

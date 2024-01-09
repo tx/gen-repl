@@ -28,6 +28,15 @@ struct UserState {
     Item[] inventory;  // Collection of items the player has picked up
 }
 
+// Add the WorldState struct
+struct WorldState {
+    bool isGameOver;
+    string playerName;
+}
+
+// Initialize the world state
+WorldState worldState = WorldState(false, "");
+
 // Initialize the user state
 UserState userState = UserState(0, []);
 
@@ -50,7 +59,7 @@ void displayItems()
 
 void displayLocation()
 {
-  writeln("You are in " ~ gameWorld[userState.locationIndex].description.toLower());
+    writeln("You are in " ~ gameWorld[userState.locationIndex].description.toLower());
 }
 
 void displayInventory()
@@ -83,11 +92,19 @@ bool pickUpItem(string itemName)
 // Define a function to start the text adventure game
 bool startTextAdventureGame()
 {
-  userState.locationIndex = 0;
-  displayLocation();
-  return true;
-}
+    // Prompt the user for their name
+    write("Welcome to the Text Adventure Game! What's your name? ");
+    worldState.playerName = readln().strip();
 
+    // Set initial game state
+    worldState.isGameOver = false;
+    userState.locationIndex = 0;
+
+    // Display initial message
+    writeln("Hello, ", worldState.playerName, "! Let the adventure begin!");
+
+    return true;
+}
 
 bool handleGameInput(string userInput)
 {
@@ -97,8 +114,9 @@ bool handleGameInput(string userInput)
     // Handle game-specific commands
     if (userInput == "quit" || userInput == "exit")
     {
-      writeln("Goodbye!");
-      return false;
+        writeln("Goodbye, ", worldState.playerName, "!");
+        worldState.isGameOver = true;
+        return false;
     }
     else if (userInput.startsWith("go to "))
     {
@@ -141,7 +159,7 @@ void moveToLocation(string destination)
     {
         if (location.name.toLower() == destination)
         {
-          destinationIndex = cast(int)i;
+            destinationIndex = cast(int)i;
             break;
         }
     }
