@@ -22,10 +22,22 @@ struct Location {
     Item[] items;  // Array of items in the location
 }
 
+// Add the Creature struct
+struct Creature {
+    string name;
+    int health;
+    int defense;
+    int attack;
+    Item[] inventory;  // Array of items the creature carries, with locationIndex
+}
+
 // Add the UserState struct
 struct UserState {
     int locationIndex;
-    Item[] inventory;  // Collection of items the player has picked up
+    int health;
+    int defense;
+    int attack;
+    Item[] inventory;  // Collection of items the player has picked up, with locationIndex
 }
 
 // Add the WorldState struct
@@ -38,7 +50,10 @@ struct WorldState {
 WorldState worldState = WorldState(false, "");
 
 // Initialize the user state
-UserState userState = UserState(0, []);
+UserState userState = UserState(0, 100, 10, 20, []); // Initial health, defense, attack values
+
+// Initialize a sample creature
+Creature enemyCreature = Creature("Dragon", 150, 15, 25, [Item("Fire Breath", "A powerful fire attack.", 0)]);
 
 // Update the gameWorld with items
 Location[] gameWorld = [
@@ -71,6 +86,24 @@ void displayInventory()
     }
 }
 
+void displayCreatureInventory()
+{
+    writeln("The creature carries the following items:");
+    foreach (item; enemyCreature.inventory)
+    {
+        writeln("\t", item.name, " - ", item.description);
+    }
+}
+
+void displayStatus()
+{
+  // Display items in the location
+  displayItems();
+  // Display player's inventory
+  displayInventory();
+  // Display creature's inventory
+  displayCreatureInventory();
+}
 bool pickUpItem(string itemName)
 {
     foreach (i, item; gameWorld[userState.locationIndex].items)
@@ -131,10 +164,8 @@ bool handleGameInput(string userInput)
         displayLocation();
         // List available exits
         writeln("Available exits: \n\t", gameWorld[userState.locationIndex].exits.join(", "));
-        // Display items in the location
-        displayItems();
-        // Display player's inventory
-        displayInventory();
+        // Display player's status
+        displayStatus();
         return true;
     }
     else if (userInput.startsWith("pick up "))
