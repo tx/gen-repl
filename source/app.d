@@ -1,3 +1,8 @@
+/**
+ * Module: gen_repl.main
+ *
+ * This module contains the main functionality for the OpenAI Request REPL application.
+ */
 module gen_repl.main;
 
 static import std.process;
@@ -6,6 +11,7 @@ import std.string;
 import std.getopt;
 
 import gen_repl.chat;  // Import the chat module
+
 
 // Constants for user prompts
 const string PROMPT_IDENTITY = "\nWho am I?";
@@ -18,13 +24,28 @@ const string COMMAND_HELP = ":help";
 const string COMMAND_IDENTITY = ":identity";
 const string COMMAND_CONTEXT = ":context";
 
-// Function to prompt the user for input
+/**
+ * Function: promptUser
+ *
+ * Prompts the user for input and returns the stripped input.
+ *
+ * Params:
+ *   - prompt: const string - The prompt message.
+ *
+ * Returns:
+ *   The user input after stripping leading/trailing whitespace.
+ */
 string promptUser(const string prompt)
 {
     writeln(prompt);
     return readln().strip();  // Read user input and remove leading/trailing whitespace
 }
 
+/**
+ * Function: printHelp
+ *
+ * Prints the available commands and their descriptions.
+ */
 void printHelp()
 {
     // Hard-coded strings for help command
@@ -35,6 +56,14 @@ void printHelp()
     writeln(COMMAND_CONTEXT, "      - Set assistant context");
 }
 
+/**
+ * Function: main
+ *
+ * The main entry point for the OpenAI Request REPL application.
+ *
+ * Params:
+ *   - args: string[] - Command-line arguments.
+ */
 void main(string[] args)
 {
     // Command line options
