@@ -37,7 +37,6 @@ const string COMMAND_CONTEXT = ":context";
  */
 string promptUser(const string prompt)
 {
-    writeln(prompt);
     return readln().strip();  // Read user input and remove leading/trailing whitespace
 }
 
