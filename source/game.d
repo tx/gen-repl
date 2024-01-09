@@ -55,38 +55,132 @@ WorldState worldState;
 UserState userState;
 auto rnd = Random(42);
 
-// JSON strings for Items, Creatures, and Locations
 string itemsJSON = `[
-    {"name": "Magic Wand", "description": "A powerful wand."},
-    {"name": "Health Potion", "description": "Restores health."},
-    {"name": "Map", "description": "A detailed map of the area."}
+    {"name": "Java Dagger", "description": "A dagger with Java syntax engraved."},
+    {"name": "Agile Throwing Star", "description": "Throw it with the speed of an agile sprint."},
+    {"name": "CSS Whip", "description": "A whip made of cascading style sheets."},
+    {"name": "Marketing Spellbook", "description": "Unleashes the power of persuasive marketing spells."},
+    {"name": "JavaScript Staff", "description": "A staff infused with the chaotic energy of JavaScript."},
+    {"name": "Debugging Grenade", "description": "Throws a grenade that explodes into debugging tools."},
+    {"name": "Caffeine Sword", "description": "A sword forged from the pure essence of caffeine."},
+    {"name": "Meeting Room Portal Scroll", "description": "Opens a portal to the dreaded meeting room."},
+    {"name": "Stress Ball Scepter", "description": "Squeeze it to release stress or cast stress-inducing spells."},
+    {"name": "Post-it Note Darts", "description": "Throw darts made of sticky notes."},
+    {"name": "Python Whistle", "description": "Summons the power of the Python programming language."},
+    {"name": "HTML Shield", "description": "A shield made of HTML elements for front-end defense."},
+    {"name": "JIRA Boomerang", "description": "Throws a boomerang that always comes back with more tasks."},
+    {"name": "SQL Scroll of Querying", "description": "Unrolls a scroll with powerful SQL queries."},
+    {"name": "Emoji Wand", "description": "Casts spells using the magic of emojis."},
+    {"name": "Remote Control Gauntlet", "description": "Controls devices from a distance with the power of the remote."},
 ]`;
 
 string creaturesJSON = `[
     {
-        "name": "Dragon",
-        "health": 150,
+        "name": "Code Gremlin",
+        "description": "A mischievous creature that wreaks havoc in your code.",
+        "health": 120,
+        "defense": 10,
+        "attack": 20,
+        "inventory": [{"name": "Syntax Error Scroll", "description": "Unleashes confusing syntax errors on your foes."}]
+    },
+    {
+        "name": "Buzzword Banshee",
+        "description": "A spectral being that haunts your meetings with buzzwords.",
+        "health": 140,
+        "defense": 12,
+        "attack": 22,
+        "inventory": [{"name": "Marketing Jargon Shield", "description": "Deflects buzzwords with a touch of sarcasm."}]
+    },
+    {
+        "name": "Deadline Lich",
+        "description": "An undead creature obsessed with imposing deadlines.",
+        "health": 160,
         "defense": 15,
         "attack": 25,
-        "inventory": [{"name": "Fire Breath", "description": "A powerful fire attack."}]
+        "inventory": [{"name": "Procrastination Amulet", "description": "Delays the inevitable with style."}]
+    },
+    {
+        "name": "Coffee Zombie",
+        "description": "A creature fueled by decaf, spreading lethargy in its wake.",
+        "health": 130,
+        "defense": 11,
+        "attack": 21,
+        "inventory": [{"name": "Decaf Dagger", "description": "Strikes fear into the hearts of caffeine lovers."}]
+    },
+    {
+        "name": "Pixel Pixie",
+        "description": "A small, pixelated creature causing graphical glitches.",
+        "health": 110,
+        "defense": 9,
+        "attack": 19,
+        "inventory": [{"name": "Glitchy Wand", "description": "Casts spells of minor inconveniences."}]
+    },
+    {
+        "name": "Project Manager Ogre",
+        "description": "A massive ogre that thrives on project timelines and Gantt charts.",
+        "health": 180,
+        "defense": 18,
+        "attack": 28,
+        "inventory": [{"name": "Gantt Chart Shield", "description": "Blocks your progress with strategic planning."}]
+    },
+    {
+        "name": "Email Imp",
+        "description": "A mischievous imp that floods your inbox with irrelevant messages.",
+        "health": 100,
+        "defense": 8,
+        "attack": 18,
+        "inventory": [{"name": "Spam Scroll", "description": "Floods your inbox with irrelevant messages."}]
+    },
+    {
+        "name": "Paperclip Golem",
+        "description": "A massive golem made of animated paperclips.",
+        "health": 150,
+        "defense": 14,
+        "attack": 24,
+        "inventory": [{"name": "Clippy Hammer", "description": "Annoyingly helpful in unexpected situations."}]
     }
 ]`;
 
 string locationsJSON = `[
     {
-        "name": "Forest",
-        "description": "A dense forest with tall trees.",
-        "exits": ["Cave", "River"]
+        "name": "Your Desk",
+        "description": "A cubicle filled with comics and despair.",
+        "exits": ["Meeting Room", "Kitchen"]
     },
     {
-        "name": "Cave",
-        "description": "A dark cave with mysterious echoes.",
-        "exits": ["Forest"]
+        "name": "Meeting Room",
+        "description": "Where dreams of productivity go to die.",
+        "exits": ["Your Desk", "Conference Room"]
     },
     {
-        "name": "River",
-        "description": "A gentle river flowing through the landscape.",
-        "exits": ["Forest"]
+        "name": "Kitchen",
+        "description": "The sacred ground of caffeine worship and snack rituals.",
+        "exits": ["Your Desk", "Break Room"]
+    },
+    {
+        "name": "Conference Room",
+        "description": "A place for endless discussions without resolutions.",
+        "exits": ["Meeting Room"]
+    },
+    {
+        "name": "Break Room",
+        "description": "Escape here for a brief moment of sanity.",
+        "exits": ["Kitchen"]
+    },
+    {
+        "name": "Server Room Dungeon",
+        "description": "Navigate through cables and server racks in this mysterious dungeon.",
+        "exits": ["Meeting Room"]
+    },
+    {
+        "name": "Code Review Cavern",
+        "description": "A cavern echoing with the sounds of code scrutiny.",
+        "exits": ["Your Desk"]
+    },
+    {
+        "name": "Boss's Lair",
+        "description": "Enter at your own risk. The lair of the ultimate decision-maker.",
+        "exits": ["Conference Room", "Server Room Dungeon"]
     }
 ]`;
 
@@ -214,18 +308,28 @@ void displayLocation()
 
 void displayInventory()
 {
-    writeln("You look in your pack and find the following:");
-    foreach (item; userState.inventory)
+  if(userState.inventory.empty())
     {
-        writeln("\t", item.name, " - ", item.description);
+      writeln("Your backpack is empty.");
     }
+  else {
+      writeln("You look in your pack and find the following:");
+      foreach (item; userState.inventory)
+        {
+          writeln("\t", item.name, " - ", item.description);
+        }
+  }
 }
 
 void displayCreatures()
 {
-    foreach (enemyCreature; gameWorld[userState.locationIndex].creatures)
+  if(!gameWorld[userState.locationIndex].creatures.empty())
     {
-        writeln("\tYou see a ", enemyCreature.name, "!");
+      writeln("You are not alone...");
+      foreach (enemyCreature; gameWorld[userState.locationIndex].creatures)
+        {
+          writeln("\tYou see a ", enemyCreature.name, "!");
+        }
     }
 }
 
