@@ -7,18 +7,54 @@ import std.getopt;
 
 import gen_repl.chat;  // Import the chat module
 
-// Define some dummy game data
+// Add the Item struct
+struct Item {
+    string name;
+    string description;
+    int locationIndex;  // Index of the location where the item is placed
+}
+
+// Update the Location struct to include items
 struct Location {
     string name;
     string description;
     string[] exits;
+    Item[] items;  // Array of items in the location
 }
 
+// Update the gameWorld with items
 Location[] gameWorld = [
-    Location("Forest", "A dense forest with tall trees.", ["Cave", "River"]),
-    Location("Cave", "A dark cave with mysterious echoes.", ["Forest"]),
-    Location("River", "A gentle river flowing through the landscape.", ["Forest"])
+    Location("Forest", "A dense forest with tall trees.", ["Cave", "River"], [Item("Magic Wand", "A powerful wand.", 0)]),
+    Location("Cave", "A dark cave with mysterious echoes.", ["Forest"], [Item("Health Potion", "Restores health.", 1)]),
+    Location("River", "A gentle river flowing through the landscape.", ["Forest"], [Item("Map", "A detailed map of the area.", 2)])
 ];
+
+// Add functions to handle items
+void displayItems()
+{
+    writeln("Items in the current location:");
+    foreach (item; gameWorld[currentLocationIndex].items)
+    {
+        writeln("\t", item.name, " - ", item.description);
+    }
+}
+
+bool pickUpItem(string itemName)
+{
+    foreach (i, item; gameWorld[currentLocationIndex].items)
+    {
+        if (item.name.toLower() == itemName)
+        {
+            // Add the item to the player's inventory
+            writeln("Picked up ", item.name, ".");
+            // Optionally, you can remove the item from the location
+            gameWorld[currentLocationIndex].items = gameWorld[currentLocationIndex].items.remove(i);
+            return true;
+        }
+    }
+    writeln("Cannot find '", itemName, "' in this location.");
+    return false;
+}
 
 // Current location index
 int currentLocationIndex = 0;
@@ -43,15 +79,7 @@ bool handleGameInput(string userInput)
     userInput = userInput.toLower();
 
     // Handle game-specific commands
-    if (userInput == "look" || userInput == "examine")
-    {
-        // Display current location description
-        writeln("Current Location: \n\t", gameWorld[currentLocationIndex].name);
-        // List available exits
-        writeln("Available exits: \n\t", gameWorld[currentLocationIndex].exits.join(", "));
-        return true;
-    }
-    else if (userInput == "quit" || userInput == "exit")
+    if (userInput == "quit" || userInput == "exit")
     {
       writeln("Goodbye!");
       return false;
@@ -61,6 +89,23 @@ bool handleGameInput(string userInput)
         // Handle "go to [location]" command
         string destination = userInput[6..$].strip();
         moveToLocation(destination);
+        return true;
+    }
+    else if (userInput == "look" || userInput == "examine" || userInput == "look around")
+    {
+        // Display current location description
+        displayLocation();
+        // List available exits
+        writeln("Available exits: \n\t", gameWorld[currentLocationIndex].exits.join(", "));
+        // Display items in the location
+        displayItems();
+        return true;
+    }
+    else if (userInput.startsWith("pick up "))
+    {
+        // Handle "pick up [item]" command
+        string itemName = userInput[8..$].strip();
+        pickUpItem(itemName);
         return true;
     }
     else
