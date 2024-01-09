@@ -4,8 +4,9 @@ import std.algorithm;
 import std.stdio;
 import std.string;
 import std.getopt;
+import std.json; // Import the JSON module
 
-import gen_repl.chat;  // Import the chat module
+import gen_repl.chat;
 
 // Add the Item struct
 struct Item {
@@ -20,6 +21,7 @@ struct Location {
     string description;
     string[] exits;
     Item[] items;  // Array of items in the location
+    Creature[] creatures;
 }
 
 // Add the Creature struct
@@ -46,21 +48,126 @@ struct WorldState {
     string playerName;
 }
 
-// Initialize the world state
-WorldState worldState = WorldState(false, "");
+Location[] gameWorld;
+WorldState worldState;
+UserState userState;
+Creature enemyCreature;
+string gameMap = `[
+    {
+        "name": "Forest",
+        "description": "A dense forest with tall trees.",
+        "exits": ["Cave", "River"],
+        "items": [
+            {"name": "Magic Wand", "description": "A powerful wand.", "locationIndex": 0}
+        ],
+        "creatures": [
+            {
+                "name": "Dragon",
+                "health": 150,
+                "defense": 15,
+                "attack": 25,
+                "inventory": [{"name": "Fire Breath", "description": "A powerful fire attack.", "locationIndex": 0}]
+            }
+        ]
+    },
+    {
+        "name": "Cave",
+        "description": "A dark cave with mysterious echoes.",
+        "exits": ["Forest"],
+        "items": [
+            {"name": "Health Potion", "description": "Restores health.", "locationIndex": 1}
+        ],
+        "creatures": []
+    },
+    {
+        "name": "River",
+        "description": "A gentle river flowing through the landscape.",
+        "exits": ["Forest"],
+        "items": [
+            {"name": "Map", "description": "A detailed map of the area.", "locationIndex": 2}
+        ],
+        "creatures": []
+    }
+]
+`;
 
-// Initialize the user state
-UserState userState = UserState(0, 100, 10, 20, []); // Initial health, defense, attack values
+// Dummy function to parse items from JSON
+Item[] toItems(JSONValue itemsJSON)
+{
+    Item[] items;
+    foreach (itemJSON; itemsJSON.array)
+    {
+        auto itemObj = itemJSON.object;
+        Item item;
 
-// Initialize a sample creature
-Creature enemyCreature = Creature("Dragon", 150, 15, 25, [Item("Fire Breath", "A powerful fire attack.", 0)]);
+        item.name = itemObj["name"].str;
+        item.description = itemObj["description"].str;
+        item.locationIndex = itemObj["locationIndex"].get!int;
 
-// Update the gameWorld with items
-Location[] gameWorld = [
-    Location("Forest", "A dense forest with tall trees.", ["Cave", "River"], [Item("Magic Wand", "A powerful wand.", 0)]),
-    Location("Cave", "A dark cave with mysterious echoes.", ["Forest"], [Item("Health Potion", "Restores health.", 1)]),
-    Location("River", "A gentle river flowing through the landscape.", ["Forest"], [Item("Map", "A detailed map of the area.", 2)])
-];
+        items ~= item;
+    }
+
+    return items;
+}
+
+// Dummy function to parse creatures from JSON
+Creature[] toCreatures(JSONValue creaturesJSON)
+{
+    Creature[] creatures;
+    foreach (creatureJSON; creaturesJSON.array)
+    {
+        auto creatureObj = creatureJSON.object;
+        Creature creature;
+
+        creature.name = creatureObj["name"].str;
+        creature.health = creatureObj["health"].get!int;
+        creature.defense = creatureObj["defense"].get!int;
+        creature.attack = creatureObj["attack"].get!int;
+
+        // Populate inventory
+        auto inventoryJSON = creatureObj["inventory"];
+        if (inventoryJSON.type == JSONType.array)
+           creature.inventory = inventoryJSON.toItems();
+
+        creatures ~= creature;
+    }
+
+    return creatures;
+}
+
+Location[] populateGameWorld(JSONValue locationsJSON)
+{
+    Location[] world = [];
+    if (locationsJSON.type != JSONType.array)
+    {
+        writeln("Error: Invalid JSON structure for locations.");
+        return world;
+    }
+
+    foreach (locationJSON; locationsJSON.array)
+    {
+        auto locationObj = locationJSON.object;
+        Location location;
+        location.name = locationObj["name"].str;
+        location.description = locationObj["description"].str;
+        foreach (exit; locationObj["exits"].array) {
+          location.exits ~= exit.get!string;
+        }
+
+        // Populate items
+        auto itemsJSON = locationObj["items"];
+        if (itemsJSON.type == JSONType.array)
+           location.items = itemsJSON.toItems();
+
+        // Populate creatures
+        auto creaturesJSON = locationObj["creatures"];
+        if (creaturesJSON.type == JSONType.array)
+           location.creatures = creaturesJSON.toCreatures();
+
+        world ~= location;
+    }
+    return world;
+}
 
 // Add functions to handle items
 void displayItems()
@@ -104,6 +211,7 @@ void displayStatus()
   // Display creature's inventory
   displayCreatureInventory();
 }
+
 bool pickUpItem(string itemName)
 {
     foreach (i, item; gameWorld[userState.locationIndex].items)
@@ -122,20 +230,18 @@ bool pickUpItem(string itemName)
     return false;
 }
 
-// Define a function to start the text adventure game
+// Dummy function to start the text adventure game
 bool startTextAdventureGame()
 {
-    // Prompt the user for their name
-    write("Welcome to the Text Adventure Game! What's your name? ");
-    worldState.playerName = readln().strip();
+    gameWorld = parseJSON(gameMap).populateGameWorld();
+    worldState = WorldState(false, "");
+    userState = UserState(0, 100, 10, 20, []); // Initial health, defense, attack values
 
-    // Set initial game state
+    writeln("Welcome to the Text Adventure Game! What's your name? ");
+    worldState.playerName = readln().strip();
     worldState.isGameOver = false;
     userState.locationIndex = 0;
-
-    // Display initial message
     writeln("Hello, ", worldState.playerName, "! Let the adventure begin!");
-
     return true;
 }
 
