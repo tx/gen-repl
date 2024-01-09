@@ -39,8 +39,25 @@ void main(string[] args)
 {
     // Command line options
     string modelName = "gpt-3.5-turbo";
-
-    getopt(args, "m|model", &modelName);
+    bool showHelp = false;  // Flag to indicate whether to show help
+    try {
+      auto helpInformation = getopt(args, "model",  &modelName, "help", &showHelp);
+      showHelp = showHelp || helpInformation.helpWanted;
+    } catch (std.getopt.GetOptException goe)
+      {
+        writeln("Unknown option!");
+        showHelp = true;
+      }
+    if (showHelp )
+    {
+        writeln("OpenAI Request REPL");
+        writeln("-------------------");
+        writeln("Usage: gen_repl [--model=<model_name>] [--help]");
+        writeln("\nOptions:");
+        writeln("  --model=<model_name>   Set the GPT model name (default: gpt-3.5-turbo)");
+        writeln("  -h --help              Display this help message");
+        return;
+    }
 
     // Check if OPENAI_API_KEY is set
     if (std.process.environment.get("OPENAI_API_KEY") is null)
