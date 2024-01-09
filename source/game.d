@@ -22,6 +22,15 @@ struct Location {
     Item[] items;  // Array of items in the location
 }
 
+// Add the UserState struct
+struct UserState {
+    int locationIndex;
+    Item[] inventory;  // Collection of items the player has picked up
+}
+
+// Initialize the user state
+UserState userState = UserState(0, []);
+
 // Update the gameWorld with items
 Location[] gameWorld = [
     Location("Forest", "A dense forest with tall trees.", ["Cave", "River"], [Item("Magic Wand", "A powerful wand.", 0)]),
@@ -33,7 +42,21 @@ Location[] gameWorld = [
 void displayItems()
 {
     writeln("Items in the current location:");
-    foreach (item; gameWorld[currentLocationIndex].items)
+    foreach (item; gameWorld[userState.locationIndex].items)
+    {
+        writeln("\t", item.name, " - ", item.description);
+    }
+}
+
+void displayLocation()
+{
+  writeln("You are in " ~ gameWorld[userState.locationIndex].description.toLower());
+}
+
+void displayInventory()
+{
+    writeln("You look in your pack and find the following:");
+    foreach (item; userState.inventory)
     {
         writeln("\t", item.name, " - ", item.description);
     }
@@ -41,14 +64,15 @@ void displayItems()
 
 bool pickUpItem(string itemName)
 {
-    foreach (i, item; gameWorld[currentLocationIndex].items)
+    foreach (i, item; gameWorld[userState.locationIndex].items)
     {
         if (item.name.toLower() == itemName)
         {
             // Add the item to the player's inventory
+            userState.inventory ~= item;
             writeln("Picked up ", item.name, ".");
             // Optionally, you can remove the item from the location
-            gameWorld[currentLocationIndex].items = gameWorld[currentLocationIndex].items.remove(i);
+            gameWorld[userState.locationIndex].items = gameWorld[userState.locationIndex].items.remove(i);
             return true;
         }
     }
@@ -56,22 +80,14 @@ bool pickUpItem(string itemName)
     return false;
 }
 
-// Current location index
-int currentLocationIndex = 0;
-
-
 // Define a function to start the text adventure game
 bool startTextAdventureGame()
 {
-  currentLocationIndex = 0;
+  userState.locationIndex = 0;
   displayLocation();
   return true;
 }
 
-void displayLocation()
-{
-  writeln("You are in " ~ gameWorld[currentLocationIndex].description);
-}
 
 bool handleGameInput(string userInput)
 {
@@ -96,9 +112,11 @@ bool handleGameInput(string userInput)
         // Display current location description
         displayLocation();
         // List available exits
-        writeln("Available exits: \n\t", gameWorld[currentLocationIndex].exits.join(", "));
+        writeln("Available exits: \n\t", gameWorld[userState.locationIndex].exits.join(", "));
         // Display items in the location
         displayItems();
+        // Display player's inventory
+        displayInventory();
         return true;
     }
     else if (userInput.startsWith("pick up "))
@@ -129,11 +147,11 @@ void moveToLocation(string destination)
     }
 
     // Check if the destination exists and is reachable from the current location
-    if (destinationIndex != -1 && gameWorld[currentLocationIndex].exits.find(destination))
+    if (destinationIndex != -1 && gameWorld[destinationIndex].exits.find(destination))
     {
         // Move to the new location
-        currentLocationIndex = destinationIndex;
-        writeln("Moved to ", gameWorld[currentLocationIndex].name);
+        userState.locationIndex = destinationIndex;
+        writeln("Moved to ", gameWorld[destinationIndex].name);
     }
     else
     {
