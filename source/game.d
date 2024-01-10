@@ -66,7 +66,7 @@ auto rnd = Random(42);
 
 // Gamemaster Config
 string modelName; 
-const gameMasterIdentity = "You are a creative, humorous and sarcastic gamemaster guiding the user through a text adventure game. You posses great knowledge about games as well as the topics of the game scenario. You address the user in the first person and speak colorfully and with vivid imagery.";
+const gameMasterIdentity = "You are a creative, humorous and sarcastic gamemaster guiding the user through a text adventure game. You posses great knowledge about games as well as the topics of the game scenario. You address the user in the second person and speak colorfully and with vivid imagery.";
 const string scenario = "Guide your players through an offbeat office adventure! Set in a marketing tech consultancy, junior developers navigate surreal challenges with tools like the Java Dagger and encounter creatures such as Code Gremlins and Buzzword Banshees. Create an absurd atmosphere, weave humorous narratives, and keep the team entertained in this unique office fantasy!";
 
 // World JSONs
@@ -109,28 +109,13 @@ const string creaturesJSON = `[
         "inventory": [{"name": "Decaf Dagger", "description": "Strikes fear into the hearts of caffeine lovers."}]
     },
     {
-        "name": "Pixel Pixie",
-        "description": "A small, pixelated creature causing graphical glitches.",
-        "health": 110,
-        "defense": 9,
-        "attack": 19,
-        "inventory": [{"name": "Glitchy Wand", "description": "Casts spells of minor inconveniences."}]
-    },
-    {
         "name": "Project Manager Ogre",
         "description": "A massive ogre that thrives on project timelines and Gantt charts.",
         "health": 180,
         "defense": 18,
         "attack": 28,
         "inventory": [{"name": "Gantt Chart Shield", "description": "Blocks your progress with strategic planning."}]
-    },
-    {
-        "name": "Email Imp",
-        "description": "A mischievous imp that floods your inbox with irrelevant messages.",
-        "health": 100,
-        "defense": 8,
-        "attack": 18,
-        "inventory": [{"name": "Spam Scroll", "description": "Floods your inbox with irrelevant messages."}]
+    }]
     }
 ]`;
 
@@ -376,7 +361,7 @@ bool startTextAdventureGame(string model)
                      ". Imaginatively but succinctly describe it to them, including" ~
                      " listing the exits and any items in the room. If there is a creature" ~
                      " in the room describe it with urgency, otherwise say there is nobody" ~
-                     " else there.", toJSON(location).toString());    
+                     " else there.", toJSON(location).toString());
     return true;
 }
 
