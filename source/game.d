@@ -9,57 +9,9 @@ import std.getopt;
 import std.json;
 import painlessjson;
 
+import gen_repl.game_objects;
 import gen_repl.chat;
 
-// Add the UserState struct
-struct UserState {
-    int locationIndex;
-    int health;
-    int defense;
-    int attack;
-    Item[] inventory;  // Collection of items the player has picked up, with locationIndex
-}
-
-// Add the WorldState struct
-struct WorldState {
-    bool isGameOver;
-    string playerName;
-}
-
-enum GameCommand {
-    Quit,
-    GoTo,
-    Look,
-    PickUp,
-    Unknown,
-}
-
-// Update the Location struct to include items
-struct Location {
-    string name;
-    string description;
-    string[] exits;
-    Item[] items;  // Array of items in the location
-    Creature[] creatures;
-}
-
-// Add the Item struct
-struct Item {
-    string name;
-    string description;
-    int locationIndex;  // Index of the location where the item is placed
-}
-
-// Add the Creature struct
-struct Creature {
-    string name;
-    int health;
-    int defense;
-    int attack;
-    Item[] inventory;  // Array of items the creature carries, with locationIndex
-}
-
-Location[] gameWorld;
 WorldState worldState;
 UserState userState;
 auto rnd = Random(42);
@@ -115,9 +67,7 @@ const string creaturesJSON = `[
         "defense": 18,
         "attack": 28,
         "inventory": [{"name": "Gantt Chart Shield", "description": "Blocks your progress with strategic planning."}]
-    }]
-    }
-]`;
+    }]`;
 
 const string locationsJSON = `[
     {
@@ -157,86 +107,18 @@ const string locationsJSON = `[
     }
 ]`;
 
-// Dummy function to parse items from JSON
-Item[] toItems(JSONValue itemsJSON)
-{
-    Item[] items;
-    foreach (itemJSON; itemsJSON.array)
-    {
-        auto itemObj = itemJSON.object;
-        Item item;
-
-        item.name = itemObj["name"].str;
-        item.description = itemObj["description"].str;
-
-        items ~= item;
-    }
-
-    return items;
-}
-
-// Dummy function to parse creatures from JSON
-Creature[] toCreatures(JSONValue creaturesJSON)
-{
-    Creature[] creatures;
-    foreach (creatureJSON; creaturesJSON.array)
-    {
-        auto creatureObj = creatureJSON.object;
-        Creature creature;
-
-        creature.name = creatureObj["name"].str;
-        creature.health = creatureObj["health"].get!int;
-        creature.defense = creatureObj["defense"].get!int;
-        creature.attack = creatureObj["attack"].get!int;
-
-        // Populate inventory
-        auto inventoryJSON = creatureObj["inventory"];
-        if (inventoryJSON.type == JSONType.array)
-           creature.inventory = inventoryJSON.toItems();
-
-        creatures ~= creature;
-    }
-
-    return creatures;
-}
-
-// Dummy function to parse locations from JSON
-Location[] toLocations(JSONValue locationsJSON)
-{
-    Location[] world = [];
-    if (locationsJSON.type != JSONType.array)
-    {
-        writeln("Error: Invalid JSON structure for locations.");
-        return world;
-    }
-
-    foreach (locationJSON; locationsJSON.array)
-    {
-        auto locationObj = locationJSON.object;
-        Location location;
-        location.name = locationObj["name"].str;
-        location.description = locationObj["description"].str;
-        foreach (exit; locationObj["exits"].array) {
-          location.exits ~= exit.get!string;
-        }
-
-        world ~= location;
-    }
-    return world;
-}
-
 // Function to randomly populate items and/or creatures in locations
-void randomPopulateLocations(Location[] locations, Item[] items, Creature[] creatures)
+void populate(Location[] locations, Item[] items, Creature[] creatures)
 {
     // Tracks the items and creatures that have been added
     Item[] addedItems;
     Creature[] addedCreatures;
-    while ( addedItems.length < items.length || addedCreatures.length < creatures.length )
+    while ( (addedItems.length < items.length || addedCreatures.length < creatures.length) && locations.length > 0)
       {
         foreach (ref location; locations)
           {
             // Randomly add items
-            if (uniform(0, 100, rnd) % 2 == 0)
+            if (uniform(0, 10, rnd) % 2 == 0)
               {
                 // Add a random item from the items array if not already added
                 Item[] remainingItems = items.filter!(item => !addedItems.canFind(item)).array();
@@ -249,7 +131,7 @@ void randomPopulateLocations(Location[] locations, Item[] items, Creature[] crea
               }
             
             // Randomly add creatures
-            if (uniform(0, 100, rnd) % 2 == 0)
+            if (uniform(0, 10, rnd) % 2 == 0)
               {
                 // Add a random creature from the creatures array if not already added
                 Creature[] remainingCreatures = creatures.filter!(creature => !addedCreatures.canFind(creature)).array();
@@ -266,13 +148,13 @@ void randomPopulateLocations(Location[] locations, Item[] items, Creature[] crea
 
 void displayItems()
 {
-  auto items = gameWorld[userState.locationIndex].items;
+  auto items = worldState.map[userState.locationIndex].items;
   gameMasterPrompt("Describe the items the user sees in the room", toJSON(items).toString());
 }
 
 void displayLocation()
 {
-  Location location = gameWorld[userState.locationIndex];
+  Location location = worldState.map[userState.locationIndex];
   writeln("\nCurrent location: " ~ location.name);
 }
 
@@ -293,10 +175,10 @@ void displayInventory()
 
 void displayCreatures()
 {
-  if(!gameWorld[userState.locationIndex].creatures.empty())
+  if(!worldState.map[userState.locationIndex].creatures.empty())
     {
       writeln("\nYou are not alone...");
-      gameMasterPrompt("The user has seen one or more creatues in the room! Let them know the risks and options!", toJSON(gameWorld[userState.locationIndex].creatures).toString());
+      gameMasterPrompt("The user has already seen one or more creatues in the room, remind them that they are present.", toJSON(worldState.map[userState.locationIndex].creatures).toString());
     }
 }
 
@@ -306,27 +188,25 @@ void displayStatus()
   displayItems();
   // Display player's inventory
   displayInventory();
-  // Display creature's inventory
-  displayCreatures();
 }
 void gameMasterPrompt(string prompt, string context="") {
   auto response = chatRequest(gameMasterIdentity, prompt, modelName, context);
   foreach (choice; response.choices)
     {
-        writeln("\n" ~ choice.message.content ~"\n");
+        writeln("\n" ~ choice.message.content);
     }
 
 }
 bool pickUpItem(string itemName)
 {
-    foreach (i, item; gameWorld[userState.locationIndex].items)
+    foreach (i, item; worldState.map[userState.locationIndex].items)
     {
         if (item.name.toLower() == itemName)
         {
             // Add the item to the player's inventory
             userState.inventory ~= item;
             gameMasterPrompt("Inform the user they've placed the item in their pack.", toJSON(item).toString());            
-            gameWorld[userState.locationIndex].items = gameWorld[userState.locationIndex].items.remove(i);
+            worldState.map[userState.locationIndex].items = worldState.map[userState.locationIndex].items.remove(i);
             return true;
         }
     }
@@ -338,7 +218,6 @@ bool pickUpItem(string itemName)
 bool startTextAdventureGame(string model)
 {
     modelName = model;
-    gameWorld = toLocations(parseJSON(locationsJSON));
     worldState = WorldState(false, "");
     userState = UserState(0, 100, 10, 20, []); // Initial health, defense, attack values
     gameMasterPrompt("The user is beginning the game described in the scenario, please welcome them to the game and be sure to ask their name.", "This is the game scenario: " ~ scenario);
@@ -346,17 +225,16 @@ bool startTextAdventureGame(string model)
     write("\n> ");
     worldState.playerName = readln().strip();
     worldState.isGameOver = false;
-    userState.locationIndex = 0;
 
-    // Parse items and creatures from JSON
-    Item[] items = toItems(parseJSON(itemsJSON));
-    Creature[] creatures = toCreatures(parseJSON(creaturesJSON));
-
+    worldState.map = parseJSON(locationsJSON).toLocations();
+    Item[] items = parseJSON(itemsJSON).toItems();
+    Creature[] creatures = parseJSON(creaturesJSON).toCreatures();
     // Randomly populate items and creatures in locations
-    randomPopulateLocations(gameWorld, items, creatures);
+    worldState.map.populate(items, creatures);
 
-    writeln("Hello, ", worldState.playerName, "! Let the adventure begin!");
-    auto location = gameWorld[userState.locationIndex];
+    writeln("\nHello, ", worldState.playerName, "! Let the adventure begin!");
+    userState.locationIndex = 0;
+    auto location = worldState.map[userState.locationIndex];
     gameMasterPrompt("The user starts at the location: " ~ location.name ~
                      ". Imaginatively but succinctly describe it to them, including" ~
                      " listing the exits and any items in the room. If there is a creature" ~
@@ -412,7 +290,7 @@ void moveToLocation(string destination)
 {
     // Find the index of the destination location
     int destinationIndex = -1;
-    foreach (i, location; gameWorld)
+    foreach (i, location; worldState.map)
     {
         if (location.name.toLower() == destination)
         {
@@ -422,12 +300,12 @@ void moveToLocation(string destination)
     }
 
     // Check if the destination exists and is reachable from the current location
-    if (destinationIndex != -1 && gameWorld[destinationIndex].exits.find(destination))
+    if (destinationIndex != -1 && worldState.map[destinationIndex].exits.find(destination))
     {
         // Move to the new location
         userState.locationIndex = destinationIndex; 
-        gameMasterPrompt("The user has travelled to the location: " ~ gameWorld[destinationIndex].name ~
-                         ". Imaginatively but succinctly describe it to them, including listing the exits and any items in the room. If there is a creature in the room describe it with urgency, otherwise say there is nobody else there.", toJSON(gameWorld[destinationIndex]).toString());        
+        gameMasterPrompt("The user has travelled to the location: " ~ worldState.map[destinationIndex].name ~
+                         ". Imaginatively but succinctly describe it to them, including listing the exits and any items in the room. You may describe decorative items, but do not describe items not included in the items array as interactive. If there is a creature in the room describe it with urgency, otherwise say there is nobody else there.", toJSON(worldState.map[destinationIndex]).toString());        
     }
     else
     {
