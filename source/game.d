@@ -64,7 +64,7 @@ void populate(Location[] locations, Item[] items, Creature[] creatures)
 void displayItems()
 {
   auto items = worldState.map[userState.locationIndex].items;
-  gameMasterPrompt("Describe the items the user sees in the room", toJSON(items).toString());
+  gameMasterPrompt("Briefly describe the room and iteratively the items the user sees in the room", toJSON(items).toString());
 }
 
 void displayLocation()
@@ -80,7 +80,7 @@ void displayInventory()
       writeln("\nYour backpack is empty.");
     }
   else {
-      writeln("\nYou look in your pack and find the following:");
+      writeln("\nYou have the following your backpack:");
       foreach (item; userState.inventory)
         {
           writeln("\t", item.name, " - ", item.description);
