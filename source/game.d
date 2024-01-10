@@ -26,6 +26,14 @@ struct WorldState {
     string playerName;
 }
 
+enum GameCommand {
+    Quit,
+    GoTo,
+    Look,
+    PickUp,
+    Unknown,
+}
+
 // Update the Location struct to include items
 struct Location {
     string name;
@@ -365,50 +373,53 @@ bool startTextAdventureGame(string model)
     writeln("Hello, ", worldState.playerName, "! Let the adventure begin!");
     auto location = gameWorld[userState.locationIndex];
     gameMasterPrompt("The user starts at the location: " ~ location.name ~
-                     ". Imaginatively but succinctly describe it to them, including listing the exits and any items in the room. If there is a creature in the room describe it with urgency, otherwise say there is nobody else there.", toJSON(location).toString());    
+                     ". Imaginatively but succinctly describe it to them, including" ~
+                     " listing the exits and any items in the room. If there is a creature" ~
+                     " in the room describe it with urgency, otherwise say there is nobody" ~
+                     " else there.", toJSON(location).toString());    
     return true;
 }
 
-bool handleGameInput(string userInput)
-{
-    // Convert the input to lowercase for case-insensitive matching
+GameCommand parseCommand(string userInput) {
     userInput = userInput.toLower();
 
-    // Handle game-specific commands
-    if (userInput == "quit" || userInput == "exit")
-    {
-        writeln("Goodbye, ", worldState.playerName, "!");
-        worldState.isGameOver = true;
-        return false;
+    if (userInput == "quit" || userInput == "exit") {
+        return GameCommand.Quit;
+    } else if (userInput.startsWith("go to ")) {
+        return GameCommand.GoTo;
+    } else if (userInput == "look" || userInput == "examine" || userInput == "look around") {
+        return GameCommand.Look;
+    } else if (userInput.startsWith("pick up ")) {
+        return GameCommand.PickUp;
+    } else {
+        return GameCommand.Unknown;
     }
-    else if (userInput.startsWith("go to "))
-    {
-        // Handle "go to [location]" command
-        string destination = userInput[6..$].strip();
-        moveToLocation(destination);
-        return true;
-    }
-    else if (userInput == "look" || userInput == "examine" || userInput == "look around")
-    {
-        // Display current location description
-        displayLocation();
-        // List available exits
-        writeln("Available exits: \n\t", gameWorld[userState.locationIndex].exits.join(", "));
-        // Display player's status
-        displayStatus();
-        return true;
-    }
-    else if (userInput.startsWith("pick up "))
-    {
-        // Handle "pick up [item]" command
-        string itemName = userInput[8..$].strip();
-        pickUpItem(itemName);
-        return true;
-    }
-    else
-    {
-        writeln("I don't understand that.");
-        return true;
+}
+
+bool handleGameInput(string userInput) {
+    switch (parseCommand(userInput)) {
+        case GameCommand.Quit:
+            writeln("Goodbye, ", worldState.playerName, "!");
+            worldState.isGameOver = true;
+            return false;
+
+        case GameCommand.GoTo:
+            string destination = userInput[6..$].strip();
+            moveToLocation(destination);
+            return true;
+
+        case GameCommand.Look:
+            displayLocation();
+            displayStatus();
+            return true;
+
+        case GameCommand.PickUp:
+            string itemName = userInput[8..$].strip();
+            pickUpItem(itemName);
+            return true;
+        default:
+            writeln("I don't understand that.");
+            return true;
     }
 }
 
