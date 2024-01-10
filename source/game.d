@@ -6,34 +6,10 @@ import std.stdio;
 import std.string;
 import std.random;
 import std.getopt;
-import std.json; // Import the JSON module
+import std.json;
+import painlessjson;
 
 import gen_repl.chat;
-
-// Add the Item struct
-struct Item {
-    string name;
-    string description;
-    int locationIndex;  // Index of the location where the item is placed
-}
-
-// Update the Location struct to include items
-struct Location {
-    string name;
-    string description;
-    string[] exits;
-    Item[] items;  // Array of items in the location
-    Creature[] creatures;
-}
-
-// Add the Creature struct
-struct Creature {
-    string name;
-    int health;
-    int defense;
-    int attack;
-    Item[] inventory;  // Array of items the creature carries, with locationIndex
-}
 
 // Add the UserState struct
 struct UserState {
@@ -50,12 +26,43 @@ struct WorldState {
     string playerName;
 }
 
+// Update the Location struct to include items
+struct Location {
+    string name;
+    string description;
+    string[] exits;
+    Item[] items;  // Array of items in the location
+    Creature[] creatures;
+}
+
+// Add the Item struct
+struct Item {
+    string name;
+    string description;
+    int locationIndex;  // Index of the location where the item is placed
+}
+
+// Add the Creature struct
+struct Creature {
+    string name;
+    int health;
+    int defense;
+    int attack;
+    Item[] inventory;  // Array of items the creature carries, with locationIndex
+}
+
 Location[] gameWorld;
 WorldState worldState;
 UserState userState;
 auto rnd = Random(42);
 
-string itemsJSON = `[
+// Gamemaster Config
+string modelName; 
+const gameMasterIdentity = "You are a creative, humorous and sarcastic gamemaster guiding the user through a text adventure game. You posses great knowledge about games as well as the topics of the game scenario. You address the user in the first person and speak colorfully and with vivid imagery.";
+const string scenario = "Guide your players through an offbeat office adventure! Set in a marketing tech consultancy, junior developers navigate surreal challenges with tools like the Java Dagger and encounter creatures such as Code Gremlins and Buzzword Banshees. Create an absurd atmosphere, weave humorous narratives, and keep the team entertained in this unique office fantasy!";
+
+// World JSONs
+const string itemsJSON = `[
     {"name": "Java Dagger", "description": "A dagger with Java syntax engraved."},
     {"name": "Agile Throwing Star", "description": "Throw it with the speed of an agile sprint."},
     {"name": "CSS Whip", "description": "A whip made of cascading style sheets."},
@@ -63,18 +70,12 @@ string itemsJSON = `[
     {"name": "JavaScript Staff", "description": "A staff infused with the chaotic energy of JavaScript."},
     {"name": "Debugging Grenade", "description": "Throws a grenade that explodes into debugging tools."},
     {"name": "Caffeine Sword", "description": "A sword forged from the pure essence of caffeine."},
-    {"name": "Meeting Room Portal Scroll", "description": "Opens a portal to the dreaded meeting room."},
-    {"name": "Stress Ball Scepter", "description": "Squeeze it to release stress or cast stress-inducing spells."},
-    {"name": "Post-it Note Darts", "description": "Throw darts made of sticky notes."},
-    {"name": "Python Whistle", "description": "Summons the power of the Python programming language."},
     {"name": "HTML Shield", "description": "A shield made of HTML elements for front-end defense."},
     {"name": "JIRA Boomerang", "description": "Throws a boomerang that always comes back with more tasks."},
     {"name": "SQL Scroll of Querying", "description": "Unrolls a scroll with powerful SQL queries."},
-    {"name": "Emoji Wand", "description": "Casts spells using the magic of emojis."},
-    {"name": "Remote Control Gauntlet", "description": "Controls devices from a distance with the power of the remote."},
 ]`;
 
-string creaturesJSON = `[
+const string creaturesJSON = `[
     {
         "name": "Code Gremlin",
         "description": "A mischievous creature that wreaks havoc in your code.",
@@ -90,14 +91,6 @@ string creaturesJSON = `[
         "defense": 12,
         "attack": 22,
         "inventory": [{"name": "Marketing Jargon Shield", "description": "Deflects buzzwords with a touch of sarcasm."}]
-    },
-    {
-        "name": "Deadline Lich",
-        "description": "An undead creature obsessed with imposing deadlines.",
-        "health": 160,
-        "defense": 15,
-        "attack": 25,
-        "inventory": [{"name": "Procrastination Amulet", "description": "Delays the inevitable with style."}]
     },
     {
         "name": "Coffee Zombie",
@@ -130,18 +123,10 @@ string creaturesJSON = `[
         "defense": 8,
         "attack": 18,
         "inventory": [{"name": "Spam Scroll", "description": "Floods your inbox with irrelevant messages."}]
-    },
-    {
-        "name": "Paperclip Golem",
-        "description": "A massive golem made of animated paperclips.",
-        "health": 150,
-        "defense": 14,
-        "attack": 24,
-        "inventory": [{"name": "Clippy Hammer", "description": "Annoyingly helpful in unexpected situations."}]
     }
 ]`;
 
-string locationsJSON = `[
+const string locationsJSON = `[
     {
         "name": "Your Desk",
         "description": "A cubicle filled with comics and despair.",
@@ -150,7 +135,7 @@ string locationsJSON = `[
     {
         "name": "Meeting Room",
         "description": "Where dreams of productivity go to die.",
-        "exits": ["Your Desk", "Conference Room"]
+        "exits": ["Your Desk", "Bathroom"]
     },
     {
         "name": "Kitchen",
@@ -158,8 +143,8 @@ string locationsJSON = `[
         "exits": ["Your Desk", "Break Room"]
     },
     {
-        "name": "Conference Room",
-        "description": "A place for endless discussions without resolutions.",
+        "name": "Bathroom",
+        "description": "A place for hiding from work and doom-scrolling.",
         "exits": ["Meeting Room"]
     },
     {
@@ -173,14 +158,9 @@ string locationsJSON = `[
         "exits": ["Meeting Room"]
     },
     {
-        "name": "Code Review Cavern",
-        "description": "A cavern echoing with the sounds of code scrutiny.",
-        "exits": ["Your Desk"]
-    },
-    {
         "name": "Boss's Lair",
         "description": "Enter at your own risk. The lair of the ultimate decision-maker.",
-        "exits": ["Conference Room", "Server Room Dungeon"]
+        "exits": ["Bathroom", "Server Room Dungeon"]
     }
 ]`;
 
@@ -291,29 +271,26 @@ void randomPopulateLocations(Location[] locations, Item[] items, Creature[] crea
       }
 }
 
-// Add functions to handle items
 void displayItems()
 {
-    writeln("Items in the current location:");
-    foreach (item; gameWorld[userState.locationIndex].items)
-    {
-        writeln("\t", item.name, " - ", item.description);
-    }
+  auto items = gameWorld[userState.locationIndex].items;
+  gameMasterPrompt("Describe the items the user sees in the room", toJSON(items).toString());
 }
 
 void displayLocation()
 {
-    writeln("You are in " ~ gameWorld[userState.locationIndex].description.toLower());
+  Location location = gameWorld[userState.locationIndex];
+  writeln("\nCurrent location: " ~ location.name);
 }
 
 void displayInventory()
 {
   if(userState.inventory.empty())
     {
-      writeln("Your backpack is empty.");
+      writeln("\nYour backpack is empty.");
     }
   else {
-      writeln("You look in your pack and find the following:");
+      writeln("\nYou look in your pack and find the following:");
       foreach (item; userState.inventory)
         {
           writeln("\t", item.name, " - ", item.description);
@@ -325,11 +302,8 @@ void displayCreatures()
 {
   if(!gameWorld[userState.locationIndex].creatures.empty())
     {
-      writeln("You are not alone...");
-      foreach (enemyCreature; gameWorld[userState.locationIndex].creatures)
-        {
-          writeln("\tYou see a ", enemyCreature.name, "!");
-        }
+      writeln("\nYou are not alone...");
+      gameMasterPrompt("The user has seen one or more creatues in the room! Let them know the risks and options!", toJSON(gameWorld[userState.locationIndex].creatures).toString());
     }
 }
 
@@ -342,7 +316,14 @@ void displayStatus()
   // Display creature's inventory
   displayCreatures();
 }
+void gameMasterPrompt(string prompt, string context="") {
+  auto response = chatRequest(gameMasterIdentity, prompt, modelName, context);
+  foreach (choice; response.choices)
+    {
+        writeln("\n" ~ choice.message.content ~"\n");
+    }
 
+}
 bool pickUpItem(string itemName)
 {
     foreach (i, item; gameWorld[userState.locationIndex].items)
@@ -351,24 +332,25 @@ bool pickUpItem(string itemName)
         {
             // Add the item to the player's inventory
             userState.inventory ~= item;
-            writeln("Picked up ", item.name, ".");
-            // Optionally, you can remove the item from the location
+            gameMasterPrompt("Inform the user they've placed the item in their pack.", toJSON(item).toString());            
             gameWorld[userState.locationIndex].items = gameWorld[userState.locationIndex].items.remove(i);
             return true;
         }
     }
-    writeln("Cannot find '", itemName, "' in this location.");
+    writeln("No '", itemName, "' in this location.");
     return false;
 }
 
 // Dummy function to start the text adventure game
-bool startTextAdventureGame()
+bool startTextAdventureGame(string model)
 {
+    modelName = model;
     gameWorld = toLocations(parseJSON(locationsJSON));
     worldState = WorldState(false, "");
     userState = UserState(0, 100, 10, 20, []); // Initial health, defense, attack values
+    gameMasterPrompt("The user is beginning the game described in the scenario, please welcome them to the game and be sure to ask their name.", "This is the game scenario: " ~ scenario);
 
-    writeln("Welcome to the Text Adventure Game! What's your name? ");
+    write("\n> ");
     worldState.playerName = readln().strip();
     worldState.isGameOver = false;
     userState.locationIndex = 0;
@@ -381,6 +363,9 @@ bool startTextAdventureGame()
     randomPopulateLocations(gameWorld, items, creatures);
 
     writeln("Hello, ", worldState.playerName, "! Let the adventure begin!");
+    auto location = gameWorld[userState.locationIndex];
+    gameMasterPrompt("The user starts at the location: " ~ location.name ~
+                     ". Imaginatively but succinctly describe it to them, including listing the exits and any items in the room. If there is a creature in the room describe it with urgency, otherwise say there is nobody else there.", toJSON(location).toString());    
     return true;
 }
 
@@ -444,11 +429,12 @@ void moveToLocation(string destination)
     if (destinationIndex != -1 && gameWorld[destinationIndex].exits.find(destination))
     {
         // Move to the new location
-        userState.locationIndex = destinationIndex;
-        writeln("Moved to ", gameWorld[destinationIndex].name);
+        userState.locationIndex = destinationIndex; 
+        gameMasterPrompt("The user has travelled to the location: " ~ gameWorld[destinationIndex].name ~
+                         ". Imaginatively but succinctly describe it to them, including listing the exits and any items in the room. If there is a creature in the room describe it with urgency, otherwise say there is nobody else there.", toJSON(gameWorld[destinationIndex]).toString());        
     }
     else
     {
         writeln("Cannot go to '", destination, "'.");
-    }
+    }  
 }

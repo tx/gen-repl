@@ -87,13 +87,12 @@ ChatResponse chatRequest(string providedIdentity, string userMessage, string mod
     // Add Messages
     auto messages = [["role": "system", "content": providedIdentity],
                      ["role": "user", "content": userMessage]];
-    requestBodyData["messages"] = JSONValue(messages);
-
     // Add assistant context if present
     if (!assistantContext.empty())
     {
-        requestBodyData["messages"] ~= JSONValue(["role": "assistant", "content": assistantContext]);
+      messages ~= ["role": "assistant", "content": assistantContext];
     }
+    requestBodyData["messages"] = JSONValue(messages);
 
     // Convert the JSONValue to a string
     string requestBody = requestBodyData.toJSON();

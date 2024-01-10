@@ -3,8 +3,13 @@
 		"Morgan Lowtech"
 	],
 	"copyright": "Copyright © 2024, Morgan Lowtech",
+	"dependencies": {
+		"painlessjson": "~>1.4.0"
+	},
 	"description": "GPT generated GPT REPL",
+	"libs": [
+		"curl"
+	],
 	"license": "BSD-1-Clause",
-        "name": "gen_repl",
-        "libs": ["curl"],
+	"name": "gen_repl"
 }

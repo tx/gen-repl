@@ -96,7 +96,7 @@ void main(string[] args)
             }
             else if (userInput == COMMAND_GAME)
               {
-                auto inProgress = startTextAdventureGame();
+                auto inProgress = startTextAdventureGame(modelName);
                 while (inProgress)
                   {
                     displayLocation();
