@@ -8,6 +8,9 @@ import std.getopt;
 import gen_repl.chat;  // Import the chat module
 import gen_repl.game;  // Import the game module
 
+// Constants for GPT prompts
+const string GPT_PROMPT_INTRO = "Please introduce yourself.";
+
 // Constants for user prompts
 const string USER_PROMPT_IDENTITY = "\nWho am I?\n> ";
 const string USER_PROMPT_INITIAL = "\nWhat would you like to do?\n> ";
@@ -81,7 +84,7 @@ void main(string[] args)
       string assistantContext;
 
       // Automatically issue a request with a default userMessage
-      chatRequest(providedIdentity, "Please introduce yourself.", modelName, assistantContext);
+      chatRequest(providedIdentity, GPT_PROMPT_INTRO, modelName, assistantContext);
 
       // Enter the REPL loop for user commands and messages
       while (true)
@@ -106,7 +109,7 @@ void main(string[] args)
                   // Prompt the user for a new providedIdentity
                   providedIdentity = promptUser(USER_PROMPT_IDENTITY);
                   // Automatically issue a request with a default userMessage
-                  chatRequest(providedIdentity, "Please introduce yourself.", modelName, assistantContext);
+                  chatRequest(providedIdentity, GPT_PROMPT_INTRO, modelName, assistantContext);
                 }
               else if (userInput == COMMAND_CONTEXT)
                 {
