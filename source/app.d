@@ -53,32 +53,10 @@ void playGame(string modelName)
     }
 }
 
-void main(string[] args)
+void repl(string modelName)
 {
-    // Command line options
-    string modelName = "gpt-3.5-turbo";
-
-    getopt(args, "m|model", &modelName);
-
-    // Check if OPENAI_API_KEY is set
-    if (std.process.environment.get("OPENAI_API_KEY") is null)
-    {
-        writeln("Error: OPENAI_API_KEY environment variable is not set.");
-        return;
-    }
-
-    writeln("Gen-REPL");
-    writeln("-------------------");
-    writeln("Welcome! We can either chat or play a game.");
-    if (promptUser(USER_PROMPT_INITIAL).toLower().indexOf("game") >= 0)
-    {
-      writeln("Sure!");
-      playGame(modelName);
-    }
-    else {
-      writeln("Let's chat!");
-      // Prompt the user for the initial providedIdentity
-      string providedIdentity = promptUser(USER_PROMPT_IDENTITY);
+  // Prompt the user for the initial providedIdentity
+  string providedIdentity = promptUser(USER_PROMPT_IDENTITY);
 
       // Assistant context
       string assistantContext;
@@ -139,5 +117,32 @@ void main(string[] args)
                 }
             }
         }
+}
+
+void main(string[] args)
+{
+    // Command line options
+    string modelName = "gpt-3.5-turbo";
+
+    getopt(args, "m|model", &modelName);
+
+    // Check if OPENAI_API_KEY is set
+    if (std.process.environment.get("OPENAI_API_KEY") is null)
+    {
+        writeln("Error: OPENAI_API_KEY environment variable is not set.");
+        return;
+    }
+
+    writeln("Gen-REPL");
+    writeln("-------------------");
+    writeln("Welcome! We can either chat or play a game.");
+    if (promptUser(USER_PROMPT_INITIAL).toLower().indexOf("game") >= 0)
+    {
+      writeln("I'll start the game!");
+      playGame(modelName);
+    }
+    else {
+      writeln("Let's chat!");
+      repl(modelName);
     }
 }

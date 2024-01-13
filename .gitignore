@@ -3,6 +3,8 @@ docs.json
 __dummy.html
 docs/
 /gen-repl
+dub.selections.json
+/gen_repl
 gen-repl.so
 gen-repl.dylib
 gen-repl.dll
