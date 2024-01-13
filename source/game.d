@@ -22,45 +22,6 @@ string modelName;
 const gameMasterIdentity = "You are a creative, humorous and sarcastic gamemaster guiding the user through a text adventure game. You posses great knowledge about games as well as the topics of the game scenario. You address the user in the second person and speak colorfully and with vivid imagery.";
 const string scenario = "Guide your players through an offbeat office adventure! Set in a marketing tech consultancy, junior developers navigate surreal challenges with tools like the Java Dagger and encounter creatures such as Code Gremlins and Buzzword Banshees. Create an absurd atmosphere, weave humorous narratives, and keep the team entertained in this unique office fantasy!";
 
-// Function to randomly populate items and/or creatures in locations
-void populate(Location[] locations, Item[] items, Creature[] creatures)
-{
-  // Tracks the items and creatures that have been added
-  Item[] addedItems;
-  Creature[] addedCreatures;
-  while ( (addedItems.length < items.length || addedCreatures.length < creatures.length) && locations.length > 0)
-    {
-      foreach (ref location; locations)
-        {
-          // Randomly add items
-          if (uniform(0, 10, rnd) % 2 == 0)
-            {
-              // Add a random item from the items array if not already added
-              Item[] remainingItems = items.filter!(item => !addedItems.canFind(item)).array();
-              if(!remainingItems.empty())
-                {
-                  auto randomItem = remainingItems.choice(rnd);
-                  addedItems ~= randomItem;
-                  location.items ~= randomItem;
-                }
-            }
-          
-          // Randomly add creatures
-          if (uniform(0, 10, rnd) % 2 == 0)
-            {
-              // Add a random creature from the creatures array if not already added
-              Creature[] remainingCreatures = creatures.filter!(creature => !addedCreatures.canFind(creature)).array();
-              if(!remainingCreatures.empty())
-                {
-                  auto randomCreature = remainingCreatures.choice(rnd);
-                  addedCreatures ~= randomCreature;
-                  location.creatures ~= randomCreature;
-                }
-            }
-        }
-    }
-}
-
 void displayItems()
 {
   auto items = worldState.map[userState.locationIndex].items;
@@ -137,18 +98,18 @@ bool playTextAdventureGame(string model)
 {
   modelName = model;
   worldState = WorldState(false, "");
+  worldState.map = parseJSON(locationsJSON).toLocations();
+  worldState.items = parseJSON(itemsJSON).toItems();
+  worldState.creatures = parseJSON(creaturesJSON).toCreatures();
+  // Randomly populate items and creatures in locations
+  worldState.populateMap();
+  
   userState = UserState(0, 100, 10, 20, []); // Initial health, defense, attack values
   gameMasterPrompt("The user is beginning the game described in the scenario, please welcome them to the game and be sure to ask their name.", "This is the game scenario: " ~ scenario);
   
   write("\n> ");
   worldState.playerName = readln().strip();
   worldState.isGameOver = false;
-  
-  worldState.map = parseJSON(locationsJSON).toLocations();
-  Item[] items = parseJSON(itemsJSON).toItems();
-  Creature[] creatures = parseJSON(creaturesJSON).toCreatures();
-  // Randomly populate items and creatures in locations
-  worldState.map.populate(items, creatures);
   
   writeln("\nHello, ", worldState.playerName, "! Let the adventure begin!");
   userState.locationIndex = 0;

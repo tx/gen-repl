@@ -1,6 +1,9 @@
 module gen_repl.game_objects;
 
+import std.algorithm;
+import std.array;
 import std.json;
+import std.random;
 import std.stdio;
 import std.string;
 
@@ -21,7 +24,9 @@ struct UserAction {
 
 struct WorldState {
   bool isGameOver;
-  string playerName;  
+  string playerName;
+  Creature[] creatures;
+  Item[] items;
   Location[] map;
 }
 
@@ -119,6 +124,46 @@ Creature[] toCreatures(JSONValue creaturesJSON)
     }
   
   return creatures;
+}
+
+// Function to randomly populate items and/or creatures in locations
+void populateMap(ref WorldState worldState)
+{
+  auto rnd = Random(42);
+  // Tracks the items and creatures that have been added
+  Item[] addedItems;
+  Creature[] addedCreatures;
+  while ( (addedItems.length < worldState.items.length || addedCreatures.length < worldState.creatures.length) && worldState.map.length > 0)
+    {
+      foreach (ref location; worldState.map)
+        {
+          // Randomly add items
+          if (uniform(0, 10, rnd) % 2 == 0)
+            {
+              // Add a random item from the items array if not already added
+              Item[] remainingItems = worldState.items.filter!(item => !addedItems.canFind(item)).array();
+              if(!remainingItems.empty())
+                {
+                  auto randomItem = remainingItems.choice(rnd);
+                  addedItems ~= randomItem;
+                  location.items ~= randomItem;
+                }
+            }
+          
+          // Randomly add creatures
+          if (uniform(0, 10, rnd) % 2 == 0)
+            {
+              // Add a random creature from the creatures array if not already added
+              Creature[] remainingCreatures = worldState.creatures.filter!(creature => !addedCreatures.canFind(creature)).array();
+              if(!remainingCreatures.empty())
+                {
+                  auto randomCreature = remainingCreatures.choice(rnd);
+                  addedCreatures ~= randomCreature;
+                  location.creatures ~= randomCreature;
+                }
+            }
+        }
+    }
 }
 
 UserAction parseUserAction(string userInput) {
