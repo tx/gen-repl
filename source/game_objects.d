@@ -2,6 +2,7 @@ module gen_repl.game_objects;
 
 import std.json;
 import std.stdio;
+import std.string;
 
 struct UserState {
     int locationIndex;
@@ -9,6 +10,13 @@ struct UserState {
     int defense;
     int attack;
     Item[] inventory;
+}
+
+struct UserAction {
+    GameCommand command;
+    string location;
+    string item;
+    string creature;
 }
 
 struct WorldState {
@@ -31,6 +39,20 @@ struct Location {
     string[] exits;
     Item[] items;
     Creature[] creatures;
+}
+
+struct Item {
+    string name;
+    string description;
+    int locationIndex;
+}
+
+struct Creature {
+    string name;
+    int health;
+    int defense;
+    int attack;
+    Item[] inventory;
 }
 
 Location[] toLocations(JSONValue locationsJSON)
@@ -57,12 +79,6 @@ Location[] toLocations(JSONValue locationsJSON)
     return world;
 }
 
-struct Item {
-    string name;
-    string description;
-    int locationIndex;
-}
-
 Item[] toItems(JSONValue itemsJSON)
 {
     Item[] items;
@@ -78,14 +94,6 @@ Item[] toItems(JSONValue itemsJSON)
     }
 
     return items;
-}
-
-struct Creature {
-    string name;
-    int health;
-    int defense;
-    int attack;
-    Item[] inventory;
 }
 
 Creature[] toCreatures(JSONValue creaturesJSON)
@@ -110,4 +118,44 @@ Creature[] toCreatures(JSONValue creaturesJSON)
     }
 
     return creatures;
+}
+
+UserAction parseUserAction(string userInput) {
+    UserAction action;
+    userInput = userInput.toLower();
+
+    if (userInput == "quit" || userInput == "exit") {
+        action.command = GameCommand.Quit;
+    } else if (userInput.startsWith("go to ")) {
+        action.command = GameCommand.GoTo;
+    } else if (userInput == "look" || userInput == "examine" || userInput == "look around") {
+        action.command = GameCommand.Look;
+    } else if (userInput.startsWith("pick up ")) {
+        action.command = GameCommand.PickUp;
+    } else {
+        action.command = GameCommand.Unknown;
+    }
+
+    // Extract targets based on the command
+    switch (action.command) {
+        case GameCommand.GoTo:
+            action.location = userInput[6..$].strip();
+            break;
+
+        case GameCommand.Look:
+            // No specific targets for "look" command
+            break;
+
+        case GameCommand.PickUp:
+            action.item = userInput[8..$].strip();
+            break;
+
+        // Add cases for other commands if needed
+
+        default:
+            // Unknown command, no specific targets
+            break;
+    }
+
+    return action;
 }

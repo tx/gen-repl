@@ -158,32 +158,16 @@ bool playTextAdventureGame(string model)
     return true;
 }
 
-GameCommand parseCommand(string userInput) {
-    userInput = userInput.toLower();
-
-    if (userInput == "quit" || userInput == "exit") {
-        return GameCommand.Quit;
-    } else if (userInput.startsWith("go to ")) {
-        return GameCommand.GoTo;
-    } else if (userInput == "look" || userInput == "examine" || userInput == "look around") {
-        return GameCommand.Look;
-    } else if (userInput.startsWith("pick up ")) {
-        return GameCommand.PickUp;
-    } else {
-        return GameCommand.Unknown;
-    }
-}
-
 bool handleGameInput(string userInput) {
-    switch (parseCommand(userInput)) {
+  const UserAction action = parseUserAction(userInput);
+    switch (action.command) {
         case GameCommand.Quit:
             writeln("Goodbye, ", worldState.playerName, "!");
             worldState.isGameOver = true;
             return false;
 
         case GameCommand.GoTo:
-            string destination = userInput[6..$].strip();
-            moveToLocation(destination);
+            moveToLocation(action.location);
             return true;
 
         case GameCommand.Look:
@@ -192,8 +176,7 @@ bool handleGameInput(string userInput) {
             return true;
 
         case GameCommand.PickUp:
-            string itemName = userInput[8..$].strip();
-            pickUpItem(itemName);
+            pickUpItem(action.item);
             return true;
         default:
             writeln("I don't understand that.");
