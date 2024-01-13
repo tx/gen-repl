@@ -9,9 +9,10 @@ import gen_repl.chat;  // Import the chat module
 import gen_repl.game;  // Import the game module
 
 // Constants for user prompts
-const string PROMPT_IDENTITY = "\nWho am I?\n> ";
-const string PROMPT_CONTEXT = "\nEnter assistant context (leave blank if none)>\n";
-const string PROMPT_COMMAND = "\n> ";
+const string USER_PROMPT_IDENTITY = "\nWho am I?\n> ";
+const string USER_PROMPT_INITIAL = "\nWhat would you like to do?\n> ";
+const string USER_PROMPT_CONTEXT = "\nEnter assistant context (leave blank if none)>\n";
+const string USER_PROMPT_COMMAND = "\n> ";
 
 // Constants for commands
 const string COMMAND_QUIT = ":quit";
@@ -38,6 +39,17 @@ void printHelp()
     writeln(COMMAND_GAME, "         - Play a game");
 }
 
+void playGame(string modelName)
+{
+  auto inProgress = playTextAdventureGame(modelName);
+  while (inProgress)
+    {
+      displayLocation();
+      string gameInput = promptUser("> ");
+      inProgress = handleGameInput(gameInput);
+    }
+}
+
 void main(string[] args)
 {
     // Command line options
@@ -52,77 +64,77 @@ void main(string[] args)
         return;
     }
 
-    writeln("OpenAI Request REPL");
+    writeln("Gen-REPL");
     writeln("-------------------");
-
-    // Prompt the user for the initial providedIdentity
-    string providedIdentity = promptUser(PROMPT_IDENTITY);
-
-    // Assistant context
-    string assistantContext;
-
-    // Automatically issue a request with a default userMessage
-    chatRequest(providedIdentity, "Please introduce yourself.", modelName, assistantContext);
-
-    // Enter the REPL loop for user commands and messages
-    while (true)
+    writeln("Welcome! We can either chat or play a game.");
+    if (promptUser(USER_PROMPT_INITIAL).toLower().indexOf("game") >= 0)
     {
-        // Prompt the user for input
-        string userInput = promptUser(PROMPT_COMMAND);
+      writeln("Sure!");
+      playGame(modelName);
+    }
+    else {
+      writeln("Let's chat!");
+      // Prompt the user for the initial providedIdentity
+      string providedIdentity = promptUser(USER_PROMPT_IDENTITY);
 
-        // Process user commands
-        if (userInput.length > 0 && userInput[0] == ':')
-        {
-            if (userInput == COMMAND_QUIT)
-            {
-                break; // Exit the REPL loop
-            }
-            else if (userInput == COMMAND_HELP)
-            {
-                printHelp(); // Display available commands
-            }
-            else if (userInput == COMMAND_IDENTITY)
-            {
-                // Prompt the user for a new providedIdentity
-                providedIdentity = promptUser(PROMPT_IDENTITY);
-                // Automatically issue a request with a default userMessage
-                chatRequest(providedIdentity, "Please introduce yourself.", modelName, assistantContext);
-            }
-            else if (userInput == COMMAND_CONTEXT)
-            {
-                // Prompt the user for assistant context
-                assistantContext = promptUser(PROMPT_CONTEXT);
-                writeln("\nAssistant context updated successfully.");
-            }
-            else if (userInput == COMMAND_GAME)
-              {
-                auto inProgress = startTextAdventureGame(modelName);
-                while (inProgress)
-                  {
-                    displayLocation();
-                    string gameInput = promptUser("> ");
-                    inProgress = handleGameInput(gameInput);
-                  }
-                // Display game outcome and return to the main REPL loop
-              }
-            else
-            {
-                writeln("Error: Unknown command. Type '", COMMAND_HELP, "' for available commands.");
-            }
-        }
-        else
-        {
-            // Assume other input is a user message
-            // Perform the OpenAI request with the providedIdentity, user message, and assistant context
-            ChatResponse chatResponse = chatRequest(providedIdentity, userInput, modelName, assistantContext);
+      // Assistant context
+      string assistantContext;
 
-            // Access the desired fields from the struct and write to the terminal
-            foreach (choice; chatResponse.choices)
+      // Automatically issue a request with a default userMessage
+      chatRequest(providedIdentity, "Please introduce yourself.", modelName, assistantContext);
+
+      // Enter the REPL loop for user commands and messages
+      while (true)
+        {
+          // Prompt the user for input
+          string userInput = promptUser(USER_PROMPT_COMMAND);
+
+          // Process user commands
+          if (userInput.length > 0 && userInput[0] == ':')
             {
-                writeln("Response:\n", choice.message.content);
+              if (userInput == COMMAND_QUIT)
+                {
+                  writeln("Goodbye!");
+                  break; // Exit the REPL loop
+                }
+              else if (userInput == COMMAND_HELP)
+                {
+                  printHelp(); // Display available commands
+                }
+              else if (userInput == COMMAND_IDENTITY)
+                {
+                  // Prompt the user for a new providedIdentity
+                  providedIdentity = promptUser(USER_PROMPT_IDENTITY);
+                  // Automatically issue a request with a default userMessage
+                  chatRequest(providedIdentity, "Please introduce yourself.", modelName, assistantContext);
+                }
+              else if (userInput == COMMAND_CONTEXT)
+                {
+                  // Prompt the user for assistant context
+                  assistantContext = promptUser(USER_PROMPT_CONTEXT);
+                  writeln("\nAssistant context updated successfully.");
+                }
+              else if (userInput == COMMAND_GAME)
+                {
+                  playGame(modelName);
+                }
+              else
+                {
+                  writeln("Error: Unknown command. Type '", COMMAND_HELP, "' for available commands.");
+                }
+            }
+          else
+            {
+              // Assume other input is a user message
+              // Perform the OpenAI request with the providedIdentity, user message, and assistant context
+              ChatResponse chatResponse = chatRequest(providedIdentity, userInput, modelName, assistantContext);
+
+              // Access the desired fields from the struct and write to the terminal
+              foreach (choice; chatResponse.choices)
+                {
+                  writeln("Response:\n", choice.message.content);
+                }
             }
         }
     }
-
-    writeln("Exiting program. Goodbye!");
 }

@@ -130,7 +130,7 @@ bool pickUpItem(string itemName)
 }
 
 // Dummy function to start the text adventure game
-bool startTextAdventureGame(string model)
+bool playTextAdventureGame(string model)
 {
     modelName = model;
     worldState = WorldState(false, "");
