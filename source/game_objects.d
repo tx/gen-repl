@@ -30,6 +30,7 @@ enum GameCommand {
     GoTo,
     Look,
     PickUp,
+    Attack,
     Unknown,
 }
 
@@ -132,6 +133,14 @@ UserAction parseUserAction(string userInput) {
         action.command = GameCommand.Look;
     } else if (userInput.startsWith("pick up ")) {
         action.command = GameCommand.PickUp;
+    } else if (userInput.startsWith("attack ")) {
+        action.command = GameCommand.Attack;
+        // Extract creature and optional item
+        auto parts = userInput[7..$].split(" with ");
+        action.creature = parts[0].strip();
+        if (parts.length > 1) {
+            action.item = parts[1].strip();
+        }
     } else {
         action.command = GameCommand.Unknown;
     }

@@ -70,7 +70,6 @@ void displayItems()
 void displayLocation()
 {
   Location location = worldState.map[userState.locationIndex];
-  writeln("\nCurrent location: " ~ location.name);
 }
 
 void displayInventory()
@@ -104,14 +103,18 @@ void displayStatus()
   // Display player's inventory
   displayInventory();
 }
+
 void gameMasterPrompt(string prompt, string context="") {
   auto response = chatRequest(gameMasterIdentity, prompt, modelName, context);
   foreach (choice; response.choices)
     {
         writeln("\n" ~ choice.message.content);
     }
-
 }
+void gameMasterPrompt(string prompt, JSONValue context) {
+  return gameMasterPrompt(prompt, context.toString());
+}
+
 bool pickUpItem(string itemName)
 {
     foreach (i, item; worldState.map[userState.locationIndex].items)
@@ -178,10 +181,30 @@ bool handleGameInput(string userInput) {
         case GameCommand.PickUp:
             pickUpItem(action.item);
             return true;
-        default:
+        case GameCommand.Attack:
+            attackCreature(action.creature, action.item);
+            return true;
+    default:
             writeln("I don't understand that.");
             return true;
     }
+}
+
+void attackCreature(string creature, string item = "") {
+  //FIXME
+  auto creatureJSON = toJSON(worldState.map[userState.locationIndex].creatures);
+  auto locationJSON = toJSON(worldState.map[userState.locationIndex]);
+  worldState.map[userState.locationIndex].creatures = [];
+  if ( item == "" )
+  {
+    gameMasterPrompt("Dramatically inform the user they've slain the " ~ creature ~ "!",
+                     "Creature:\n" ~ creatureJSON.toString() ~ "\n\n" ~ "Location:\n" ~ locationJSON.toString());
+  }
+  else {
+    gameMasterPrompt("Dramatically inform the user they've slain the " ~ creature ~ " using their trusty " ~ item ~ "!",
+                     "Creature:\n" ~ creatureJSON.toString() ~ "\n\n" ~ "Location:\n" ~ locationJSON.toString());
+  }
+  // Actual attack logic TBD
 }
 
 void moveToLocation(string destination)
