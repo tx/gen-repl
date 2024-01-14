@@ -1,3 +1,8 @@
+/**
+ * Module: gen_repl.main
+ *
+ * This module contains the main functionality for the OpenAI Request REPL application.
+ */
 module gen_repl.main;
 
 static import std.process;
@@ -10,6 +15,7 @@ import gen_repl.game;  // Import the game module
 
 // Constants for GPT prompts
 const string GPT_PROMPT_INTRO = "Please introduce yourself.";
+
 
 // Constants for user prompts
 const string USER_PROMPT_IDENTITY = "\nWho am I?\n> ";
@@ -24,13 +30,28 @@ const string COMMAND_IDENTITY = ":identity";
 const string COMMAND_CONTEXT = ":context";
 const string COMMAND_GAME = ":game";
 
-// Function to prompt the user for input
+/**
+ * Function: promptUser
+ *
+ * Prompts the user for input and returns the stripped input.
+ *
+ * Params:
+ *   - prompt: const string - The prompt message.
+ *
+ * Returns:
+ *   The user input after stripping leading/trailing whitespace.
+ */
 string promptUser(const string prompt)
 {
-    write(prompt);
-    return readln().strip();  // Read user input and remove leading/trailing whitespace
+  writeln(prompt);
+  return readln().strip();  // Read user input and remove leading/trailing whitespace
 }
 
+/**
+ * Function: printHelp
+ *
+ * Prints the available commands and their descriptions.
+ */
 void printHelp()
 {
     // Hard-coded strings for help command
@@ -119,12 +140,37 @@ void repl(string modelName)
         }
 }
 
+/**
+ * Function: main
+ *
+ * The main entry point for the OpenAI Request REPL application.
+ *
+ * Params:
+ *   - args: string[] - Command-line arguments.
+ */
 void main(string[] args)
 {
     // Command line options
     string modelName = "gpt-3.5-turbo";
-
-    getopt(args, "m|model", &modelName);
+    bool showHelp = false;  // Flag to indicate whether to show help
+    try {
+      auto helpInformation = getopt(args, "model",  &modelName, "help", &showHelp);
+      showHelp = showHelp || helpInformation.helpWanted;
+    } catch (std.getopt.GetOptException goe)
+      {
+        writeln("Unknown option!");
+        showHelp = true;
+      }
+    if (showHelp )
+    {
+        writeln("OpenAI Request REPL");
+        writeln("-------------------");
+        writeln("Usage: gen_repl [--model=<model_name>] [--help]");
+        writeln("\nOptions:");
+        writeln("  --model=<model_name>   Set the GPT model name (default: gpt-3.5-turbo)");
+        writeln("  -h --help              Display this help message");
+        return;
+    }
 
     // Check if OPENAI_API_KEY is set
     if (std.process.environment.get("OPENAI_API_KEY") is null)

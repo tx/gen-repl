@@ -1,3 +1,8 @@
+/**
+ * Module: gen_repl.chat
+ *
+ * This module contains functions and structs related to interacting with the OpenAI Chat API.
+ */
 module gen_repl.chat;
 
 static import std.process;
@@ -34,7 +39,17 @@ struct Usage {
     int total_tokens;
 }
 
-// Function to manually parse JSON and populate the struct
+/**
+ * Function: toChatResponse
+ *
+ * Manually parses JSON and populates the ChatResponse struct.
+ *
+ * Params:
+ *   - value: JSONValue - The JSON data to be parsed.
+ *
+ * Returns:
+ *   The populated ChatResponse struct.
+ */
 ChatResponse toChatResponse(JSONValue value) {
     ChatResponse chatResponse;
     chatResponse.id = value["id"].get!string;
@@ -66,7 +81,20 @@ ChatResponse toChatResponse(JSONValue value) {
     return chatResponse;
 }
 
-// Function to perform OpenAI request and return ChatResponse
+/**
+ * Function: chatRequest
+ *
+ * Performs an OpenAI request and returns a ChatResponse.
+ *
+ * Params:
+ *   - providedIdentity: string - The provided identity for the chat.
+ *   - userMessage: string - The user's message.
+ *   - modelName: string - The GPT model name.
+ *   - assistantContext: string - The assistant's context (optional).
+ *
+ * Returns:
+ *   The ChatResponse from the OpenAI API.
+ */
 ChatResponse chatRequest(string providedIdentity, string userMessage, string modelName, string assistantContext = "")
 {
     // Retrieve the API key from the environment variable
