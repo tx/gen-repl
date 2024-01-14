@@ -1,3 +1,5 @@
+// game.d
+
 module gen_repl.game;
 
 import std.algorithm;
@@ -12,6 +14,7 @@ import painlessjson;
 import gen_repl.chat;
 import gen_repl.game_data;
 import gen_repl.game_objects;
+import gen_repl.game_worldstate;
 
 WorldState worldState;
 UserState userState;
@@ -19,7 +22,7 @@ auto rnd = Random(42);
 
 // Gamemaster Config
 string modelName; 
-const gameMasterIdentity = "You are a creative, humorous and sarcastic gamemaster guiding the user through a text adventure game. You posses great knowledge about games as well as the topics of the game scenario. You address the user in the second person and speak colorfully and with vivid imagery.";
+const gameMasterIdentity = "You are a creative, humorous and sarcastic gamemaster guiding the user through a text adventure game. You possess great knowledge about games as well as the topics of the game scenario. You address the user in the second person and speak colorfully and with vivid imagery.";
 const string scenario = "Guide your players through an offbeat office adventure! Set in a marketing tech consultancy, junior developers navigate surreal challenges with tools like the Java Dagger and encounter creatures such as Code Gremlins and Buzzword Banshees. Create an absurd atmosphere, weave humorous narratives, and keep the team entertained in this unique office fantasy!";
 
 void displayItems()
@@ -40,7 +43,7 @@ void displayInventory()
       writeln("\nYour backpack is empty.");
     }
   else {
-    writeln("\nYou have the following your backpack:");
+    writeln("\nYou have the following in your backpack:");
     foreach (item; userState.inventory)
       {
         writeln("\t", item.name, " - ", item.description);
@@ -53,7 +56,7 @@ void displayCreatures()
   if(!worldState.map[userState.locationIndex].creatures.empty())
     {
       writeln("\nYou are not alone...");
-      gameMasterPrompt("The user has already seen one or more creatues in the room, remind them that they are present.", toJSON(worldState.map[userState.locationIndex].creatures).toString());
+      gameMasterPrompt("The user has already seen one or more creatures in the room, remind them that they are present.", toJSON(worldState.map[userState.locationIndex].creatures).toString());
     }
 }
 
@@ -65,14 +68,17 @@ void displayStatus()
   displayInventory();
 }
 
-void gameMasterPrompt(string prompt, string context="") {
+void gameMasterPrompt(string prompt, string context="")
+{
   auto response = chatRequest(gameMasterIdentity, prompt, modelName, context);
   foreach (choice; response.choices)
     {
       writeln("\n" ~ choice.message.content);
     }
 }
-void gameMasterPrompt(string prompt, JSONValue context) {
+
+void gameMasterPrompt(string prompt, JSONValue context)
+{
   return gameMasterPrompt(prompt, context.toString());
 }
 
@@ -97,7 +103,7 @@ bool pickUpItem(string itemName)
 bool playTextAdventureGame(string model)
 {
   modelName = model;
-  worldState = WorldState(false, "");
+  worldState = new WorldState(false, ""); // Create WorldState instance using new
   worldState.map = parseJSON(locationsJSON).toLocations();
   worldState.items = parseJSON(itemsJSON).toItems();
   worldState.creatures = parseJSON(creaturesJSON).toCreatures();
@@ -122,12 +128,13 @@ bool playTextAdventureGame(string model)
   return true;
 }
 
-bool handleGameInput(string userInput) {
+bool handleGameInput(string userInput)
+{
   const UserAction action = parseUserAction(userInput);
   switch (action.command) {
   case GameCommand.Quit:
     writeln("Goodbye, ", worldState.playerName, "!");
-    worldState.isGameOver = true;
+    worldState.setIsGameOver(true); // Use setter method for WorldState
     return false;
     
   case GameCommand.GoTo:
@@ -151,8 +158,8 @@ bool handleGameInput(string userInput) {
   }
 }
 
-void attackCreature(string creature, string item = "") {
-  //FIXME
+void attackCreature(string creature, string item = "")
+{
   auto creatureJSON = toJSON(worldState.map[userState.locationIndex].creatures);
   auto locationJSON = toJSON(worldState.map[userState.locationIndex]);
   worldState.map[userState.locationIndex].creatures = [];
